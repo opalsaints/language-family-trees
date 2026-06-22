@@ -26,6 +26,8 @@ parallel **UDHR** corpus. The cross-script case is handled with **uroman** roman
   UDHR text = the finite-sample *estimation wall*.
 - **Tier 1 (Latin script):** trees recover **Romance**, **Germanic** (West vs North), **Slavic**,
   **Uralic**; JS and NCD agree (r = 0.87). English clusters with **Romance** — the Norman-borrowing signal.
+- **Quantitative score (Robinson–Foulds vs true Glottolog tree):** JS = **0.45**, NCD = 0.64,
+  random baseline = **0.88** → trees capture real family structure; transparent JS beats the compressor.
 - **Tier 2 (cross-script):** raw text clusters **by writing system** (Kazakh pairs with Russian by
   Cyrillic; Hebrew–Arabic maximally distant). After **uroman**: nearest-neighbour-matches-family
   **0.44 → 1.00**; Hebrew–Arabic and Turkish–Kazakh become mutual nearest neighbours. Semitic & Turkic recovered.

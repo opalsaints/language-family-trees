@@ -138,3 +138,31 @@ def cluster_labels(D, labels, k):
     for lbl, a in zip(labels, assign):
         out.setdefault(int(a), []).append(lbl)
     return out
+
+
+# ------------------------------------------------ gold-tree (Robinson-Foulds)
+def linkage_to_newick(Z, labels):
+    """Topology-only Newick string from a scipy linkage matrix."""
+    from scipy.cluster.hierarchy import to_tree
+    t = to_tree(Z, rd=False)
+
+    def rec(node):
+        if node.is_leaf():
+            return labels[node.id]
+        return f"({rec(node.get_left())},{rec(node.get_right())})"
+    return rec(t) + ";"
+
+
+def robinson_foulds(newick_a, newick_b):
+    """Normalized symmetric difference (RF) between two unrooted topologies.
+    Returns (rf, max_rf, normalized in [0,1]); 0 = identical topology."""
+    import dendropy
+    from dendropy.calculate import treecompare
+    tns = dendropy.TaxonNamespace()
+    ta = dendropy.Tree.get(data=newick_a, schema="newick", taxon_namespace=tns)
+    tb = dendropy.Tree.get(data=newick_b, schema="newick", taxon_namespace=tns)
+    ta.encode_bipartitions(); tb.encode_bipartitions()
+    rf = treecompare.symmetric_difference(ta, tb)
+    n = sum(1 for _ in ta.leaf_node_iter())
+    max_rf = 2 * (n - 3)  # unrooted binary trees
+    return rf, max_rf, (rf / max_rf if max_rf else 0.0)
