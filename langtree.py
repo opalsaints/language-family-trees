@@ -402,6 +402,37 @@ def nn_purity(D, labels, group):
     return hits / len(labels)
 
 
+def bootstrap_ci(texts, names, group, gold_newick, n_boot=150, seed=0, ngram=3):
+    """Token bootstrap: resample each language's n-gram multiset (multinomial on
+    its empirical distribution) and recompute family-NN purity + normalized RF,
+    giving 95% confidence intervals on the headline numbers. Returns
+    {'purity': (lo, med, hi), 'rf': (lo, med, hi)}."""
+    rng = np.random.default_rng(seed)
+    base = [ngram_counter(t, ngram) for t in texts]
+    keys = [list(c.keys()) for c in base]
+    probs, tots = [], []
+    for c in base:
+        v = np.array(list(c.values()), dtype=float)
+        tots.append(int(v.sum()))
+        probs.append(v / v.sum() if v.sum() else v)
+    purs, rfs = [], []
+    for _ in range(n_boot):
+        cs = []
+        for ks, pr, tot in zip(keys, probs, tots):
+            draw = rng.multinomial(tot, pr)
+            cs.append({k: int(x) for k, x in zip(ks, draw) if x})
+        m = len(cs)
+        D = np.zeros((m, m))
+        for i in range(m):
+            for j in range(i + 1, m):
+                D[i, j] = D[j, i] = js_div_counts(cs[i], cs[j])
+        purs.append(nn_purity(D, names, group))
+        rfs.append(rf_corrected(linkage_to_newick(upgma(D, names), names), gold_newick)[2])
+    pct = lambda a: (float(np.percentile(a, 2.5)), float(np.percentile(a, 50)),
+                     float(np.percentile(a, 97.5)))
+    return {"purity": pct(purs), "rf": pct(rfs)}
+
+
 def rf_corrected(newick_inferred, newick_gold):
     """Robinson-Foulds with an HONEST denominator = sum of the two trees' own
     non-trivial bipartitions (not 2(n-3)). Handles a multifurcating gold tree:
