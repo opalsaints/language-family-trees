@@ -54,20 +54,26 @@ def safe(label):
     return re.sub(r"[^0-9A-Za-z]+", "_", label).strip("_") or "X"
 
 
-def load(selection=SELECTION, verse_cap=4000, char_cap=None):
-    """Return dict with parallel content-controlled per-language data.
+def load(selection=SELECTION, verse_cap=4000, char_cap=None, align=True):
+    """Return dict with per-language data.
+
+    align=True (default): strictly PARALLEL — the same `verse_cap` verses common
+    to every language (content-controlled; right for a curated set).
+    align=False: COMPARABLE — each language uses its own verses (same genre, not
+    the identical verses); needed at large breadth where no verse is shared by
+    all (e.g. indigenous NT translations with different versification).
 
     Keys: names, rawtext{label->pre-clean str}, rows[(label,fam,gen,sub)],
-    iso{label->ISO639-3}, script{label->script}, common[verse ids].
-    `char_cap` (optional) truncates each language's raw text (bounds romanization
-    time while keeping the same verses across languages)."""
+    iso{label->ISO639-3}, script{label->script}, common[verse ids]."""
     meta = load_meta()
     present = [fn for fn in selection if os.path.exists(os.path.join(BIBLES, fn))]
     verses = {fn: parse_verses(os.path.join(BIBLES, fn)) for fn in present}
+
     common = None
-    for fn in present:
-        common = set(verses[fn]) if common is None else (common & set(verses[fn]))
-    common = sorted(common)[:verse_cap]
+    if align:
+        for fn in present:
+            common = set(verses[fn]) if common is None else (common & set(verses[fn]))
+        common = sorted(common)[:verse_cap]
 
     names, rawtext, rows, iso, script, used = [], {}, [], {}, {}, set()
     for fn in present:
@@ -76,7 +82,13 @@ def load(selection=SELECTION, verse_cap=4000, char_cap=None):
         while lab in used:
             lab += "_"
         used.add(lab)
-        txt = " ".join(verses[fn][v] for v in common)
+        if align:
+            txt = " ".join(verses[fn][v] for v in common)
+        else:
+            vids = sorted(verses[fn])
+            if verse_cap:
+                vids = vids[:verse_cap]
+            txt = " ".join(verses[fn][v] for v in vids)
         if char_cap:
             txt = txt[:char_cap]
         names.append(lab)
