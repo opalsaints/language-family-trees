@@ -292,6 +292,116 @@ def _internal_bipartitions(tree):
     return c
 
 
+def _gz(b):
+    return len(gzip.compress(b, 9))
+
+
+def ncd_matrix_fixed(texts, cap_bytes=None):
+    """gzip Normalized Compression Distance with the audit fixes:
+    symmetric (average of both concatenation orders), a rare separator byte at
+    the seam, an equal byte budget (cap_bytes) so multi-byte scripts aren't
+    penalised, and the self-compression floor subtracted. Crude Kolmogorov
+    proxy — report comparatively, not as ground truth."""
+    raw = [t.encode("utf-8") for t in texts]
+    if cap_bytes:
+        raw = [b[:cap_bytes] for b in raw]
+    SEP = b"\x01"
+    C = [_gz(b) for b in raw]
+    floors = [((_gz(b + SEP + b) - cx) / cx if cx else 0.0) for b, cx in zip(raw, C)]
+    floor = sum(floors) / len(floors)
+    m = len(texts)
+    D = np.zeros((m, m))
+    for i in range(m):
+        for j in range(i + 1, m):
+            cxy = 0.5 * (_gz(raw[i] + SEP + raw[j]) + _gz(raw[j] + SEP + raw[i]))
+            d = (cxy - min(C[i], C[j])) / max(C[i], C[j])
+            D[i, j] = D[j, i] = max(0.0, d - floor)
+    return D
+
+
+def nj_newick(D, labels):
+    """Saitou-Nei Neighbor-Joining tree (unrooted, no molecular-clock
+    assumption) -> Newick with branch lengths. Topology is what RF compares."""
+    name = {i: labels[i] for i in range(len(labels))}
+    active = list(range(len(labels)))
+    dist = {}
+    for i in range(len(labels)):
+        for j in range(i + 1, len(labels)):
+            dist[(i, j)] = float(D[i][j])
+    nxt = len(labels)
+
+    def dget(a, b):
+        return dist[(a, b)] if a < b else dist[(b, a)]
+
+    while len(active) > 2:
+        m = len(active)
+        r = {a: sum(dget(a, b) for b in active if b != a) for a in active}
+        best = bi = bj = None
+        for ii in range(m):
+            for jj in range(ii + 1, m):
+                a, b = active[ii], active[jj]
+                q = (m - 2) * dget(a, b) - r[a] - r[b]
+                if best is None or q < best:
+                    best, bi, bj = q, a, b
+        a, b = bi, bj
+        dab = dget(a, b)
+        la = 0.5 * dab + (r[a] - r[b]) / (2 * (m - 2))
+        lb = dab - la
+        u = nxt; nxt += 1
+        name[u] = f"({name[a]}:{max(la,0):.6f},{name[b]}:{max(lb,0):.6f})"
+        for c in active:
+            if c in (a, b):
+                continue
+            duc = 0.5 * (dget(a, c) + dget(b, c) - dab)
+            x, y = (u, c) if u < c else (c, u)
+            dist[(x, y)] = duc
+        active.remove(a); active.remove(b); active.append(u)
+    a, b = active
+    return f"({name[a]}:{max(dget(a,b),0):.6f},{name[b]});"
+
+
+def cophenetic_corr(D, labels):
+    """Cophenetic correlation: how faithfully the UPGMA dendrogram preserves the
+    original pairwise distances (1.0 = perfect). The standard tree-quality
+    diagnostic, separate from RF (which compares topology to the gold tree)."""
+    from scipy.cluster.hierarchy import cophenet
+    Z = upgma(D, labels)
+    coph, _ = cophenet(Z, squareform(D, checks=False))
+    return coph
+
+
+def _random_binary_newick(labels, rng):
+    nodes = labels[:]
+    rng.shuffle(nodes)
+    while len(nodes) > 1:
+        a = nodes.pop(); b = nodes.pop()
+        nodes.insert(0, f"({a},{b})")
+        rng.shuffle(nodes)
+    return nodes[0] + ";"
+
+
+def random_tree_null(labels, gold_newick, n=500, seed=0):
+    """Proper null: RF of RANDOM binary tree TOPOLOGIES vs the gold tree (not the
+    old label-shuffle-on-one-fixed-shape, which can't reach low RF). Returns
+    (p05, p50, p95, min) of normalized RF over n random trees."""
+    import random as _r
+    rng = _r.Random(seed)
+    vals = sorted(rf_corrected(_random_binary_newick(labels, rng), gold_newick)[2]
+                  for _ in range(n))
+    pick = lambda q: vals[min(len(vals) - 1, int(q * len(vals)))]
+    return pick(0.05), pick(0.50), pick(0.95), vals[0]
+
+
+def nn_purity(D, labels, group):
+    """Fraction of items whose nearest neighbour shares its `group` (e.g. family).
+    `group` maps label -> group key. Robust, intuitive complement to RF."""
+    hits = 0
+    for i, lab in enumerate(labels):
+        j = min((k for k in range(len(labels)) if k != i), key=lambda k: D[i, k])
+        hits += (group[labels[j]] == group[lab])
+    return hits / len(labels)
+
+
 def rf_corrected(newick_inferred, newick_gold):
     """Robinson-Foulds with an HONEST denominator = sum of the two trees' own
     non-trivial bipartitions (not 2(n-3)). Handles a multifurcating gold tree:
