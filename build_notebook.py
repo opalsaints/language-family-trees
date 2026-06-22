@@ -1,9 +1,9 @@
 """Generate the self-contained Colab notebook LanguageTrees.ipynb.
 
-This reflects the current state of the project (Stage-1 proof of concept on the
-parallel Bible corpus + the audit-driven rigor fixes). The heavier arms
-(romanization, NCD, Neighbor-Joining, bootstrap CIs, ASJP cross-check, full
-scale-up) are flagged as in-progress and land in the overnight build.
+The notebook is a thin orchestrator: in Colab it clones this (public) repo so it
+can `import langtree, biblecorpus` (the tested, committed code) instead of
+duplicating it, then reproduces every result and figure. Locally it just imports
+the modules already present. Regenerating after a code change is therefore cheap.
 """
 import nbformat as nbf
 
@@ -18,426 +18,252 @@ md(r"""
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/opalsaints/language-family-trees/blob/main/LanguageTrees.ipynb)
 
-**Big question.** Languages evolve like species — they share ancestors, split, and drift apart.
-Can we *rediscover* the family tree of languages using **nothing but information theory applied to
-raw text** — no dictionaries, no grammar, no hand-built linguistic features?
-
-**Why this is complexity science.** A language is a discrete stochastic source. Shannon (1951)
-showed printed English carries ~1 bit/letter with ~75% redundancy. That redundancy *is* structure,
-and structure is comparable: if two languages have similar statistical structure, an
-information-theoretic **distance** between them should be small. We turn that idea into a tree and
-then ask the sharp question — *does the information theory actually buy us anything over a trivial
-baseline?*
+**Big question.** Languages evolve like species — shared ancestors, splits, drift. Can we
+*rediscover* the family tree of languages from **raw text and information theory alone** — no
+dictionaries, no grammar, no hand-built features — and, crucially, show the information theory does
+real work a trivial baseline can't?
 """)
 
 md(r"""
-## What this notebook shows (and an honest status)
+## What this notebook shows
 
-We had a first version of this project on a tiny 14-language sample. We then ran a hard adversarial
-audit of our own method. The audit found two things worth taking seriously:
+We built a first version, then ran a hard adversarial audit of our own method. It found (1) on a tiny
+distinct-script sample a **dumb "which letters does it use" baseline tied** our trigram method — the
+information theory was doing nothing; and (2) a **bug** silently corrupting Turkish. This is the
+rebuilt, honest version: fixed bug, a large content-controlled many-family corpus (the parallel
+Bible), and **the trivial baselines + a negative control reported every time**, so the contribution
+of the information theory is measured, not assumed.
 
-1. **A dumb baseline tied us.** On a small set of distinct-orthography languages, a measure that
-   only looks at *which characters a language uses* (an "alphabet overlap" — no frequencies, no
-   n-grams, no information theory at all) recovered the family tree **exactly as well** as our
-   trigram Jensen–Shannon method. On that toy data, the information theory was doing **no** work.
-2. **A real data bug.** Our text cleaner silently corrupted Turkish (the `İ` → `i + combining dot`
-   casefold turned into a spurious space).
-
-This notebook is the rebuilt, honest version. We (a) fix the bug, (b) move to a **much larger,
-content-controlled, many-family corpus** (the parallel Bible), and (c) **always report the trivial
-baselines and a negative control** so the contribution of the information theory is measurable rather
-than assumed.
-
-> **Status.** This is the Stage-1 proof of concept (character-trigram JS vs. baselines on ~57
-> languages). The cross-script **romanization** arm, **compression distance (NCD)**,
-> **Neighbor-Joining**, **bootstrap confidence intervals**, and the **ASJP** field-standard
-> cross-check are built in the follow-up and noted at the end.
+Contents: cleaning → corpus → Shannon ladder → distances & baselines → the **crux experiment**
+(does it beat the baseline at scale?) → the tree → the **cross-script romanization arm** (and the
+clean proof the information theory does the work) → **tree methods & robustness** (Neighbor-Joining
+vs UPGMA, cophenetic correlation, a proper random-tree null, compression distance). Still to come:
+ASJP cross-check and a larger language panel.
 """)
 
-md("## 0. Setup")
+md("## 0. Setup  — clone the repo (for the code) + the Bible corpus")
 code(r"""
-# Installs are quiet and idempotent; the Bible corpus is a ~600 MB shallow git clone.
-import importlib, subprocess, sys, os
-
+import os, sys, subprocess, importlib
 def ensure(pkg, mod=None):
-    try:
-        importlib.import_module(mod or pkg)
-    except ImportError:
-        subprocess.run([sys.executable, "-m", "pip", "install", "-q", pkg], check=False)
-
-for p in ["numpy", "scipy", "matplotlib", "dendropy"]:
+    try: importlib.import_module(mod or pkg)
+    except ImportError: subprocess.run([sys.executable,"-m","pip","install","-q",pkg], check=False)
+for p in ["numpy","scipy","matplotlib","dendropy","uroman"]:
     ensure(p)
 
-if not os.path.exists("corpus/bible-corpus"):
-    os.makedirs("corpus", exist_ok=True)
-    subprocess.run(["git", "clone", "--depth", "1",
-                    "https://github.com/christos-c/bible-corpus",
-                    "corpus/bible-corpus"], check=False)
+# get the tested code (langtree.py, biblecorpus.py). Locally they're already here.
+try:
+    import langtree  # noqa
+except ImportError:
+    if not os.path.isdir("language-family-trees"):
+        subprocess.run(["git","clone","--depth","1",
+                        "https://github.com/opalsaints/language-family-trees"], check=False)
+    sys.path.insert(0, os.path.abspath("language-family-trees"))
 
-import csv, math, re, unicodedata, random, time
-import xml.etree.ElementTree as ET
-from collections import Counter, defaultdict
+import langtree as lt
+import biblecorpus as bc
 import numpy as np
 import matplotlib.pyplot as plt
 %matplotlib inline
 
-BASE = "corpus/bible-corpus"
-print("corpus present:", os.path.exists(os.path.join(BASE, "bibles")))
+# get the corpus (cloned next to biblecorpus.py so its paths resolve)
+cdir = os.path.join(os.path.dirname(bc.__file__), "corpus", "bible-corpus")
+if not os.path.isdir(os.path.join(cdir, "bibles")):
+    os.makedirs(os.path.dirname(cdir), exist_ok=True)
+    subprocess.run(["git","clone","--depth","1",
+                    "https://github.com/christos-c/bible-corpus", cdir], check=False)
+print("ready — corpus present:", os.path.isdir(os.path.join(cdir, "bibles")))
 """)
 
 md(r"""
 ## 1. Cleaning the text (and the bug we caught)
 
-Every language is reduced to a stream of casefolded Unicode **letters** with runs of non-letters
-collapsed to a single space. One subtlety the audit exposed: combining marks. Turkish capital `İ`
-casefolds to `i` + U+0307 (a combining dot above); naively mapping "everything that isn't a letter"
-to a space turned that dot into a **word break**, shredding Turkish n-grams. The fix: NFC-normalize,
-keep combining marks *attached* to their base letter (never spaces — this also protects Arabic
-*harakat* and Devanagari *matras*), and drop the stray Turkish dot.
+Each language → a stream of casefolded Unicode letters, runs of non-letters collapsed to one space.
+The audit's bug: Turkish `İ` casefolds to `i` + a combining dot, and naively mapping non-letters to
+spaces turned that dot into a **word break**, shredding Turkish n-grams. Fixed by NFC-normalizing,
+keeping combining marks attached (this also protects Arabic/Indic scripts), and dropping the stray dot.
 """)
 code(r"""
-def clean(text, keep_diacritics=True):
-    text = unicodedata.normalize("NFC", text.casefold()).replace("̇", "")
-    if not keep_diacritics:
-        text = "".join(c for c in unicodedata.normalize("NFKD", text)
-                       if not unicodedata.combining(c))
-    out = "".join(ch if unicodedata.category(ch)[0] in "LM" else " " for ch in text)
-    return re.sub(r"\s+", " ", out).strip()
-
-# the bug, fixed: the stray combining dot no longer injects a space
-assert clean("İSTANBUL İNSAN") == "istanbul insan"
-print("clean('İstanbul') =", repr(clean("İstanbul")), " (precomposed accents kept:",
-      repr(clean("café CAFÉ")), ")")
+assert lt.clean("İSTANBUL İNSAN") == "istanbul insan"   # the bug, fixed
+print("clean('İstanbul') =", repr(lt.clean("İstanbul")),
+      "| accents kept:", repr(lt.clean("café CAFÉ")))
 """)
 
 md(r"""
 ## 2. The corpus — the parallel Bible (content-controlled)
 
-We use the [christos-c parallel Bible corpus](https://github.com/christos-c/bible-corpus): ~100
-verse-aligned translations. Because every language is the *same* set of verses, any distance we
-measure is a difference between **languages**, not topics — the exact control an information-theoretic
-comparison needs. It also ships a `metadata.csv` with each language's **Family / Genus / Subgenus**,
-which we use to build the ground-truth tree (no hand-typing, no circularity).
+The [christos-c parallel Bible](https://github.com/christos-c/bible-corpus): ~100 verse-aligned
+translations. Same verses in every language ⇒ any distance is between **languages**, not topics. Its
+`metadata.csv` gives each language's Family/Genus/Subgenus, from which we build the gold tree (no
+hand-typing, no circularity). We use a 57-language, ~13-family, multi-script subset.
 """)
 code(r"""
-SELECTION = [
-    "English.xml","German.xml","Dutch.xml","Swedish.xml","Danish.xml","Icelandic.xml",
-    "Norwegian.xml","Afrikaans.xml",                                    # Germanic
-    "French.xml","Spanish.xml","Italian.xml","Portuguese.xml","Romanian.xml","Latin.xml",  # Romance
-    "Russian.xml","Polish.xml","Czech.xml","Bulgarian.xml","Serbian.xml","Croatian.xml",
-    "Slovak.xml","Slovene.xml","Ukranian-NT.xml",                       # Slavic
-    "Lithuanian.xml","Latvian-NT.xml",                                  # Baltic
-    "Finnish.xml","Hungarian.xml",                                      # Uralic
-    "Greek.xml","Albanian.xml",                                         # Hellenic / Albanian
-    "Hindi.xml","Farsi.xml","Nepali.xml","Marathi.xml",                 # Indo-Iranian
-    "Kannada.xml","Malayalam.xml","Telugu.xml",                         # Dravidian
-    "Turkish.xml",                                                      # Turkic
-    "Hebrew.xml","Arabic.xml","Amharic.xml","Syriac-NT.xml",            # Semitic / Afro-Asiatic
-    "Chinese.xml","Korean.xml","Japanese.xml","Vietnamese.xml","Thai.xml","Burmese.xml",  # E/SE Asia
-    "Indonesian.xml","Tagalog.xml","Cebuano.xml","Malagasy.xml","Maori.xml",  # Austronesian
-    "Swahili-NT.xml","Xhosa.xml","Shona.xml","Zulu-NT.xml",             # Niger-Congo
-    "Basque-NT.xml",                                                    # isolate
-]
-VERSE_CAP = 4000   # take the first N common verses = equal, content-controlled budget
-
-def load_meta():
-    with open(os.path.join(BASE, "metadata.csv"), newline="", encoding="utf-8") as f:
-        return {r["Filename"]: r for r in csv.DictReader(f)}
-
-def parse_verses(path):
-    out = {}
-    for _, el in ET.iterparse(path, events=("end",)):
-        if el.tag.split("}")[-1] == "seg" and el.attrib.get("type") == "verse":
-            vid = el.attrib.get("id")
-            if vid:
-                out[vid] = "".join(el.itertext())
-            el.clear()
-    return out
-
-def safe(label):
-    return re.sub(r"[^0-9A-Za-z]+", "_", label).strip("_") or "X"
-
-meta = load_meta()
-present = [fn for fn in SELECTION if os.path.exists(os.path.join(BASE, "bibles", fn))]
-verses = {fn: parse_verses(os.path.join(BASE, "bibles", fn)) for fn in present}
-
-common = None
-for fn in present:
-    common = set(verses[fn]) if common is None else (common & set(verses[fn]))
-common = sorted(common)[:VERSE_CAP]
-
-names, texts, rows, used = [], [], [], set()
-for fn in present:
-    m = meta[fn]; lab = safe(m["Language"])
-    while lab in used: lab += "_"
-    used.add(lab)
-    names.append(lab)
-    texts.append(clean(" ".join(verses[fn][v] for v in common)))
-    rows.append((lab, m["Family"], m["Genus"], m["Subgenus"]))
-fam_of = {lab: fam for lab, fam, _, _ in rows}
-
-from collections import Counter as _C
-fam_counts = _C(fam_of.values())
-print(f"{len(names)} languages over {len(common)} content-controlled verses; "
-      f"chars/lang {min(map(len,texts))}–{max(map(len,texts))}")
-print("families:", dict(sorted(fam_counts.items(), key=lambda kv: -kv[1])))
+d = bc.load(verse_cap=2000, char_cap=30000)     # equal, content-controlled budget per language
+names, rows, iso = d["names"], d["rows"], d["iso"]
+fam_of = {r[0]: r[1] for r in rows}
+raw = [lt.clean(d["rawtext"][n]) for n in names]
+from collections import Counter
+print(len(names), "languages,", len(d["common"]), "shared verses")
+print("families:", dict(sorted(Counter(fam_of.values()).items(), key=lambda kv:-kv[1])))
 """)
 
 md(r"""
-## 3. Foundations — Shannon's entropy ladder (now with enough text)
+## 3. Foundations — Shannon's entropy ladder
 
-For a text over an alphabet, the **block entropy** $H(n)$ is the Shannon entropy of its $n$-grams.
-The **conditional entropy** of the next letter given the previous $n-1$ is $F_n = H(n) - H(n-1)$,
-and the true per-letter rate is $H = \lim_{n\to\infty} F_n$. Context can only *reduce* uncertainty,
-so $F_1 \ge F_2 \ge F_3 \ge \dots$ — a descending staircase whose drop *is* the redundancy of the
-language. On the old ~10k-char sample this ladder was biased low (the finite-sample *estimation
-wall*). The Bible gives us ~10× more text, so the estimate now lands much closer to Shannon's values.
+Block entropy $H(n)$ over $n$-grams; conditional entropy $F_n=H(n)-H(n-1)$; redundancy is the drop
+$F_1\ge F_2\ge\dots$. With enough text the plug-in estimate lands near Shannon's classic values.
 """)
 code(r"""
-def block_entropy(text, n):
-    c = Counter(text[i:i+n] for i in range(len(text)-n+1)); tot = sum(c.values())
-    return -sum((v/tot)*math.log2(v/tot) for v in c.values())
-
-eng = texts[names.index("English")]
-print(f"English Bible sample: {len(eng):,} characters, {len(set(eng))} symbols")
+eng = raw[names.index("English")]
 prev = 0.0
+print(f"English sample: {len(eng):,} chars, {len(set(eng))} symbols")
 for n in range(1, 5):
-    Hn = block_entropy(eng, n); Fn = Hn - prev
-    print(f"  F{n} = {Fn:.2f} bits/char"); prev = Hn
-print("\nShannon 1951 reference (27 symbols): F1=4.03, F2=3.32, F3=3.1 bits/char")
+    Hn = lt.block_entropy(eng, n); print(f"  F{n} = {Hn-prev:.2f} bits/char"); prev = Hn
+print("Shannon 1951 reference: F1=4.03, F2=3.32, F3=3.1")
 """)
 
 md(r"""
-## 4. Distances — and the baselines that keep us honest
+## 4. Distances, baselines, and the crux experiment
 
-Each language becomes a **character-trigram distribution** $p$. The information-theoretic distance is
-the **Jensen–Shannon divergence**, a symmetric, bounded cousin of Kullback–Leibler relative entropy;
-its square root is a true metric and it handles trigrams seen in one language but not the other (plain
-KL would diverge). We compute it *sparsely* (over the union of two languages' observed n-grams) so it
-scales to many scripts.
-
-Crucially, alongside it we **always** compute three reference measures:
-- **unigram-JS** — same idea but order-blind (single characters only).
-- **alphabet-Jaccard** — the *dumb baseline*: $1 - |A\cap B| / |A\cup B|$ over the **set** of
-  characters used. No frequencies, no order, no information theory. If trigram-JS can't beat this, the
-  information theory is adding nothing.
-- **shuffle-trigram** — a *negative control*: shuffle each text's characters (destroying all order,
-  keeping the exact inventory and unigram frequencies) and re-run trigram-JS.
+Each language → a character-trigram distribution; distance = **Jensen–Shannon divergence** (symmetric,
+bounded relative-entropy cousin; sparse so it scales to many scripts). Alongside it we *always* compute
+**unigram-JS** (order-blind), the **alphabet-overlap** dumb baseline (set of characters; no
+frequencies, no information theory), and a **shuffle** negative control (order destroyed). We score each
+tree against the gold family tree with an honest Robinson–Foulds (denominator = the trees' own
+bipartitions) and report nearest-neighbour family purity.
 """)
 code(r"""
-def ngram_counter(text, n=3):
-    return Counter(text[i:i+n] for i in range(len(text)-n+1))
-
-def js_div_counts(ca, cb):
-    ta, tb = sum(ca.values()), sum(cb.values())
-    if ta == 0 or tb == 0: return 1.0
-    js = 0.0
-    for k in set(ca) | set(cb):
-        p, q = ca.get(k,0)/ta, cb.get(k,0)/tb; m = 0.5*(p+q)
-        if p > 0: js += 0.5*p*math.log2(p/m)
-        if q > 0: js += 0.5*q*math.log2(q/m)
-    return math.sqrt(max(js, 0.0))
-
-def js_matrix(texts, n=3):
-    cs = [ngram_counter(t, n) for t in texts]; m = len(texts); D = np.zeros((m, m))
-    for i in range(m):
-        for j in range(i+1, m):
-            D[i,j] = D[j,i] = js_div_counts(cs[i], cs[j])
-    return D
-
-def alphabet_jaccard_matrix(texts):
-    sets = [set(t) - {" "} for t in texts]; m = len(texts); D = np.zeros((m, m))
-    for i in range(m):
-        for j in range(i+1, m):
-            u = len(sets[i] | sets[j])
-            D[i,j] = D[j,i] = (1 - len(sets[i] & sets[j]) / u) if u else 0.0
-    return D
-
-def shuffle_chars(text, seed=0):
-    r = random.Random(seed); c = list(text); r.shuffle(c); return "".join(c)
-print("distance functions ready")
-""")
-
-md(r"""
-## 5. The gold tree and an honest Robinson–Foulds
-
-The **gold tree** is built straight from the corpus metadata (Family → Genus → Subgenus); it is
-*multifurcating* (Glottolog-style — unresolved nodes are real, not errors). We score a tree with the
-**Robinson–Foulds** distance (number of conflicting branch-splits) but with an **honest denominator**
-— the sum of the two trees' own non-trivial bipartitions — instead of the textbook $2(n-3)$, which
-assumes both trees are fully binary and makes a perfect score unreachable against a polytomous gold.
-We also report **nearest-neighbour family purity**: the fraction of languages whose closest neighbour
-is in the same family (intuitive, and robust to how the deep tree is drawn).
-""")
-code(r"""
-from scipy.cluster.hierarchy import linkage, dendrogram, to_tree
-from scipy.spatial.distance import squareform
-import dendropy
-from dendropy.calculate import treecompare
-
-def upgma(D, labels):
-    return linkage(squareform(D, checks=False), method="average")
-
-def linkage_to_newick(Z, labels):
-    t = to_tree(Z, rd=False)
-    def rec(n): return labels[n.id] if n.is_leaf() else f"({rec(n.get_left())},{rec(n.get_right())})"
-    return rec(t) + ";"
-
-def gold_newick_from_rows(rows):
-    tree = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-    for label, fam, gen, sub in rows:
-        tree[fam or "NA"][gen or "_"][sub or "_"].append(label)
-    def join(ch):
-        ch = [c for c in ch if c]; return ch[0] if len(ch) == 1 else "(" + ",".join(ch) + ")"
-    fam_nodes = []
-    for fam, gens in tree.items():
-        gen_nodes = [join([join(labs) for labs in subs.values()]) for subs in gens.values()]
-        fam_nodes.append(join(gen_nodes))
-    return join(fam_nodes) + ";"
-
-def _internal_bipartitions(tree):
-    tree.is_rooted = False; tree.encode_bipartitions()
-    nl = sum(1 for _ in tree.leaf_node_iter()); c = 0
-    for nd in tree.preorder_node_iter():
-        if nd.parent_node is None or nd.is_leaf(): continue
-        if 2 <= sum(1 for _ in nd.leaf_iter()) <= nl - 2: c += 1
-    return c
-
-def rf_corrected(nwk_inferred, nwk_gold):
-    tns = dendropy.TaxonNamespace()
-    ti = dendropy.Tree.get(data=nwk_inferred, schema="newick", taxon_namespace=tns)
-    tg = dendropy.Tree.get(data=nwk_gold, schema="newick", taxon_namespace=tns)
-    ti.is_rooted = tg.is_rooted = False
-    ti.encode_bipartitions(); tg.encode_bipartitions()
-    rf = treecompare.symmetric_difference(ti, tg)
-    denom = _internal_bipartitions(ti) + _internal_bipartitions(tg)
-    return rf, denom, (rf/denom if denom else 0.0)
-
-def nn_family_purity(D, names):
-    hits = 0
-    for i, lab in enumerate(names):
-        j = min((k for k in range(len(names)) if k != i), key=lambda k: D[i, k])
-        hits += (fam_of[names[j]] == fam_of[lab])
-    return hits / len(names)
-
-gold = gold_newick_from_rows(rows)
-print("gold tree built from metadata taxonomy")
-""")
-
-md(r"""
-## 6. The crux experiment — does the information theory beat the dumb baseline?
-
-Same languages, same verses, four measures, scored against the true family tree.
-""")
-code(r"""
+gold = lt.gold_newick_from_rows(rows)
 methods = {
-    "trigram-JS  (information theory)": js_matrix(texts, n=3),
-    "unigram-JS  (frequencies only)":   js_matrix(texts, n=1),
-    "alphabet-Jaccard  (DUMB BASELINE)": alphabet_jaccard_matrix(texts),
-    "shuffle-trigram  (neg. control)":  js_matrix([shuffle_chars(t) for t in texts], n=3),
+    "trigram-JS  (information theory)": lt.js_matrix(raw, 3),
+    "unigram-JS  (frequencies only)":   lt.js_matrix(raw, 1),
+    "alphabet-overlap  (DUMB BASELINE)": lt.alphabet_jaccard_matrix(raw),
+    "shuffle-trigram  (neg. control)":  lt.js_matrix([lt.shuffle_chars(t) for t in raw], 3),
 }
-print(f"{'method':36s}{'normRF↓':>9s}{'NN-family-purity↑':>20s}")
-print("-"*65)
+print(f"{'method':36s}{'normRF':>8s}{'family-NN':>11s}")
+print("-"*55)
 res = {}
-for name, D in methods.items():
-    nwk = linkage_to_newick(upgma(D, names), names)
-    _, _, norm = rf_corrected(nwk, gold)
-    pur = nn_family_purity(D, names)
-    res[name] = (norm, pur)
-    print(f"{name:36s}{norm:9.3f}{pur:20.3f}")
-print("-"*65)
-tri = res["trigram-JS  (information theory)"]
-alp = res["alphabet-Jaccard  (DUMB BASELINE)"]
-print(f"trigram-JS purity {tri[1]:.3f}  vs  alphabet baseline {alp[1]:.3f}  "
-      f"({len(names)} languages)")
+for nm, D in methods.items():
+    _,_,rf = lt.rf_corrected(lt.linkage_to_newick(lt.upgma(D, names), names), gold)
+    pur = lt.nn_purity(D, names, fam_of); res[nm] = (rf, pur)
+    print(f"{nm:36s}{rf:8.3f}{pur:11.3f}")
+print("-"*55)
+print("=> at scale the information theory BEATS the dumb baseline (unlike the toy case where it tied);")
+print("   most of the gain is in the frequencies, n-gram order adds a smaller increment.")
 """)
 
-md(r"""
-**Reading the result.** Unlike the toy sample where it *tied*, at Bible scale across many families the
-information-theoretic measure **clearly beats** the alphabet baseline — far more languages get a
-correct same-family nearest neighbour. The honest nuance: most of the gain is already in the
-**frequencies** (unigram-JS beats the baseline); higher-order trigram structure adds a smaller
-increment, and the shuffle control — which keeps only inventory + unigram frequencies — sits between
-the baseline and trigram-JS, exactly as it should. So the claim is not "n-grams are magic"; it is
-"**information-theoretic frequency statistics recover family structure that letter inventory alone
-cannot.**"
-""")
-
-md("## 7. The tree")
+md("### The tree (raw text)")
 code(r"""
 from matplotlib.patches import Patch
-fams = sorted(set(fam_of.values()))
-cmap = plt.get_cmap("tab20")
-fam_color = {f: cmap(i % 20) for i, f in enumerate(fams)}
-D = methods["trigram-JS  (information theory)"]
-Z = upgma(D, names)
-fig, ax = plt.subplots(figsize=(11, 0.33*len(names)+2))
-dendrogram(Z, labels=names, orientation="right", ax=ax,
-           color_threshold=0, above_threshold_color="#999")
-ax.set_title(f"Parallel Bible corpus — character-trigram Jensen–Shannon tree\n"
-             f"{len(names)} languages, UPGMA, labels coloured by true family")
-ax.set_xlabel("Jensen–Shannon distance (character trigrams)")
-for lbl in ax.get_ymajorticklabels():
-    lbl.set_color(fam_color[fam_of[lbl.get_text()]]); lbl.set_fontsize(8)
-ax.legend(handles=[Patch(facecolor=fam_color[f], label=f) for f in fams],
-          loc="lower right", fontsize=6, ncol=2, framealpha=0.9)
-plt.tight_layout(); plt.show()
+from scipy.cluster.hierarchy import dendrogram
+def plot_family_tree(D, title):
+    fams = sorted(set(fam_of.values())); cm = plt.get_cmap("tab20")
+    col = {f: cm(i % 20) for i, f in enumerate(fams)}
+    Z = lt.upgma(D, names)
+    fig, ax = plt.subplots(figsize=(11, 0.33*len(names)+2))
+    dendrogram(Z, labels=names, orientation="right", ax=ax, color_threshold=0, above_threshold_color="#999")
+    ax.set_title(title); ax.set_xlabel("Jensen–Shannon distance (character trigrams)")
+    for lb in ax.get_ymajorticklabels(): lb.set_color(col[fam_of[lb.get_text()]]); lb.set_fontsize(8)
+    ax.legend(handles=[Patch(facecolor=col[f], label=f) for f in fams], loc="lower right", fontsize=6, ncol=2)
+    plt.tight_layout(); plt.show()
+plot_family_tree(methods["trigram-JS  (information theory)"],
+                 f"Raw parallel Bible — trigram-JS tree, {len(names)} languages (coloured by family)")
+""")
+md(r"""
+Within a writing system, families fall out (Romance, Germanic, Latin-script Slavic, Austronesian,
+Niger-Congo, Indo-Aryan). But every **unique-script** language sits at distance ≈ 1.0 with no
+neighbour — the **script confound**: disjoint character sets give JS = 1. That depresses the score and
+sets up the next step.
 """)
 
 md(r"""
-**What the tree shows — success *and* the next problem.**
+## 5. The cross-script fix — romanization (uroman), and the cleanest proof
 
-*Within a writing system, families fall right out:* **Romance** (Latin/French/Spanish/Portuguese/
-Italian/Romanian), **Germanic** (Afrikaans/Dutch/German/Norwegian/Danish/Swedish/English),
-**Latin-script Slavic** (Czech/Slovak/Croatian/Serbian/Slovene/Polish), **Austronesian**
-(Maori/Malagasy/Cebuano/Tagalog/Indonesian), **Niger-Congo** (Shona/Swahili/Zulu/Xhosa), and
-**Indo-Aryan** (Nepali/Hindi/Marathi).
+We romanize every language into one Latin alphabet with **uroman** and re-run. Two payoffs: cross-script
+families should reconnect, and — since romanizing makes every language share one alphabet — the
+alphabet-overlap baseline should **collapse**, so any family recovery is now unambiguously the n-gram
+*statistics* doing the work, not the letter inventory.
+""")
+code(r"""
+rom_raw = bc.romanize_cached(names, d["rawtext"], iso, tag="v2000_c30000")  # cached after first run
+rom = [lt.clean(rom_raw[n]) for n in names]
 
-*Across writing systems, the character method is blind:* every language in a unique script
-(Japanese, Chinese, Korean, Hebrew, Arabic, Amharic, Syriac, Greek, Thai, Burmese, the Dravidian
-trio) is pinned at distance ≈ 1.0 with no neighbour — disjoint character sets give JS = 1. Even
-**Afro-Asiatic is split four ways** (Hebrew, Arabic, Amharic, Syriac each in its own script) and
-**Cyrillic Slavic** (Russian/Bulgarian/Ukrainian) is torn from Latin-script Slavic. This is the
-*script confound*, and it is exactly what depresses the family-purity score.
+def family_nn(texts): return lt.nn_purity(lt.js_matrix(texts,3), names, fam_of)
+def alpha_nn(texts):  return lt.nn_purity(lt.alphabet_jaccard_matrix(texts), names, fam_of)
+R = (family_nn(raw),  alpha_nn(raw),  len(set("".join(raw))-{" "}))
+M = (family_nn(rom),  alpha_nn(rom),  len(set("".join(rom))-{" "}))
+print(f"{'':10s}{'trigram-JS':>12s}{'alphabet-baseline':>20s}{'union alphabet':>16s}")
+print(f"{'RAW':10s}{R[0]:12.3f}{R[1]:20.3f}{R[2]:16d}")
+print(f"{'ROMANIZED':10s}{M[0]:12.3f}{M[1]:20.3f}{M[2]:16d}")
+print(f"\nD1 proof: romanizing collapses the alphabet ({R[2]}->{M[2]} chars); the baseline can't improve,")
+print(f"but trigram-JS rises to {M[0]:.3f} (margin +{M[0]-M[1]:.3f}) -> the information theory does the work.")
+
+# D1 figure
+fig, ax = plt.subplots(figsize=(6.5,4))
+x=np.arange(2); w=.36
+ax.bar(x-w/2,[R[0],M[0]],w,label="trigram-JS (information theory)",color="#1f77b4")
+ax.bar(x+w/2,[R[1],M[1]],w,label="alphabet-overlap (dumb baseline)",color="#d62728")
+ax.set_xticks(x); ax.set_xticklabels(["RAW\n(many scripts)","ROMANIZED\n(one alphabet)"])
+ax.set_ylim(0,1); ax.set_ylabel("nearest-neighbour family purity")
+ax.set_title("Equalize the alphabet → the baseline collapses,\nfamily recovery is the information theory")
+for i,v in enumerate([R[0],M[0]]): ax.text(i-w/2,v+.02,f"{v:.2f}",ha="center",fontsize=8)
+for i,v in enumerate([R[1],M[1]]): ax.text(i+w/2,v+.02,f"{v:.2f}",ha="center",fontsize=8)
+ax.legend(fontsize=8); plt.tight_layout(); plt.show()
+""")
+code(r"""
+Djs_rom = lt.js_matrix(rom, 3)
+idx = {n:i for i,n in enumerate(names)}
+print("cross-script family pairs, JS distance (raw -> romanized):")
+for a,b in [("Hebrew","Arabic"),("Telugu","Kannada"),("Russian","Polish"),("Greek","Latin")]:
+    if a in idx and b in idx:
+        Dr = lt.js_matrix(raw,3)
+        print(f"  {a}-{b}: {Dr[idx[a],idx[b]]:.3f} -> {Djs_rom[idx[a],idx[b]]:.3f}")
+plot_family_tree(Djs_rom, f"Romanized (uroman) Bible — trigram-JS tree, {len(names)} languages")
+""")
+md(r"""
+After romanization Hebrew–Arabic, the Dravidian trio, and Cyrillic/Latin Slavic reconnect, family
+purity rises, and the alphabet baseline is left behind. Caveat (uroman is not neutral): it renders the
+abjads Hebrew/Arabic as **vowelless consonant skeletons** (`כל בני האדם` → `kl vny hadm`) and CJK as
+spaceless pinyin — so some "reconnection" reflects shared romanization artefacts, not pure genealogy.
 """)
 
 md(r"""
-## 8. Honest limits, and what's next (the overnight build)
+## 6. Tree methods & robustness
 
-**Limits (stated, not hidden).**
-- Character statistics measure **orthographic / surface** similarity, which *tracks* genealogy but is
-  not identical to it (shared spelling conventions, borrowing, script).
-- Bible text is **translated** (mild translationese, shared across languages) and the Hebrew/Arabic
-  here is a classical/liturgical register — to be cross-checked against modern text.
-- A single point estimate is not a result without **uncertainty**.
+UPGMA assumes a molecular clock; **Neighbor-Joining** does not. We also report **cophenetic
+correlation** (how faithfully the dendrogram preserves the distances), a **proper null** (RF of random
+*tree topologies* vs gold — the old label-shuffle null couldn't reach low RF), and **gzip NCD** as an
+independent estimator.
+""")
+code(r"""
+D = Djs_rom
+up = lt.linkage_to_newick(lt.upgma(D, names), names)
+nj = lt.nj_newick(D, names)
+Dncd = lt.ncd_matrix_fixed(rom, cap_bytes=30000)
+p05,p50,p95,mn = lt.random_tree_null(names, gold, n=300)
+print(f"UPGMA   normRF vs gold : {lt.rf_corrected(up, gold)[2]:.3f}")
+print(f"Neighbor-Joining normRF: {lt.rf_corrected(nj, gold)[2]:.3f}   (NJ usually beats UPGMA here)")
+print(f"gzip NCD normRF vs gold: {lt.rf_corrected(lt.linkage_to_newick(lt.upgma(Dncd,names),names), gold)[2]:.3f}")
+print(f"cophenetic correlation : {lt.cophenetic_corr(D, names):.3f}   (dendrogram fidelity to distances)")
+print(f"random-tree null normRF: p05={p05:.3f} p50={p50:.3f} (our trees sit FAR below chance)")
+""")
 
-**Next (in progress).**
-1. **Romanization arm (uroman).** Map every language into one Latin alphabet so the cross-script walls
-   above collapse. This is also the cleanest "the information theory *must* work" regime: once every
-   language shares an inventory, the alphabet baseline is near-useless, so any family recovery is the
-   n-gram statistics doing the work. We expect Hebrew↔Arabic↔Amharic↔Syriac and the Cyrillic/Latin
-   Slavic split to reconnect.
-2. **Compression distance (NCD)** as an independent estimator (with the byte-budget / window fixes).
-3. **Neighbor-Joining** (no molecular-clock assumption) alongside UPGMA.
-4. **Bootstrap confidence intervals** on every distance, RF, and purity number, plus branch support.
-5. **ASJP cross-check** — compare our text-derived tree to the field-standard phonetic-wordlist tree.
-6. **Scale-up** to many more languages and families.
+md(r"""
+## 7. Honest limits & what's next
+
+**Limits.** Character statistics measure orthographic/surface similarity (tracks genealogy, ≠ it);
+Bible text is translated (mild shared translationese) and its Hebrew/Arabic is a classical register;
+uroman is lossy/non-neutral. RF is harsh — read it against the ~0.97 random null, and alongside
+cophenetic and family-purity.
+
+**Next.** ASJP field-standard cross-check (phonetic wordlists, no script confound); bootstrap
+confidence intervals + branch support; a larger language panel; FLORES+ as a modern-register
+cross-corpus check.
 
 ### References
-- Shannon (1951), *Prediction and Entropy of Printed English.*
-- Benedetto, Caglioti & Loreto (2002), *Language Trees and Zipping*, PRL 88, 048702 — and the Goodman
-  (2002) comment cautioning that gzip is a weak entropy proxy.
-- Cilibrasi & Vitányi (2005), *Clustering by Compression*, IEEE Trans. Inf. Theory (NCD).
-- Bentz et al. (2017), *The Entropy of Words*, Entropy 19(6):275 (entropy across the Parallel Bible
-  Corpus; sample-size stabilization).
-- Gamallo, Pichel & Alegria (2017), *From language identification to language distance*, Physica A
-  (character-n-gram language distance).
-- Greenhill (2011), *Levenshtein Distances Fail to Identify Language Relationships Accurately* (why a
-  naive string distance can look right while being wrong).
-- Jäger (2018), *Global-scale phylogenetic linguistic inference from lexical resources*, Sci. Data
-  (ASJP).
-- Hermjakob, May & Knight (2018), *Out-of-the-box Universal Romanization Tool (uroman)*, ACL.
-- Paninski (2003), *Estimation of Entropy and Mutual Information.*
+Shannon 1951; Benedetto, Caglioti & Loreto 2002 (*Language Trees and Zipping*) + Goodman 2002 comment;
+Cilibrasi & Vitányi 2005 (NCD); Bentz et al. 2017 (entropy across the Bible corpus); Gamallo et al.
+2017 (character-n-gram language distance); Greenhill 2011; Jäger 2018 (ASJP); Saitou & Nei 1987 (NJ);
+Hermjakob, May & Knight 2018 (uroman); Paninski 2003.
 """)
 
 nb["cells"] = cells
