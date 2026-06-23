@@ -30,7 +30,9 @@ Run:  /opt/miniconda3/bin/python3 methods_compare.py
 import os, sys, time
 import numpy as np
 
-os.chdir("/Users/jonathancowley/Downloads/Spring2026/ComplexityLab/LanguageTreeProject")
+# Run from this script's own directory (the repo) so relative corpus/figures paths
+# resolve on any machine — NOT a hardcoded local path (that broke Colab/Snellius).
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.getcwd())
 
 import langtree as lt
