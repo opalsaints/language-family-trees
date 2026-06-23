@@ -9,9 +9,11 @@ Pipeline (parallels the distance-based arms, but Bayesian/character-based):
      threshold. NOTE: this is plain edit-distance cognate clustering, NOT lingpy
      LexStat (which trains a sound-correspondence scorer) — cognate_arm.py uses real
      LexStat; here the coding is kept simple/self-contained for the binary matrix.
-     CAVEAT: the matrix keeps only variable cognate columns, so a Bayesian run
-     should add a Lewis Mkv ascertainment correction (the emitted XML does not yet,
-     flagged as future work alongside the MCMC run).
+     CAVEAT: the matrix keeps only variable cognate columns, so the model should add
+     a Lewis Mkv ascertainment correction (conditioning on variability). The MCMC
+     itself now RUNS (2M generations -> MCC tree, compared to gold below); only the
+     ascertainment correction remains future work, so branch lengths/rates are not
+     calibrated and we compare topology (GQD/RF) only.
      Each cognate set -> one BINARY character: 1 if the language has a form in that
      set, else 0 (absence). This is the Dollo-ish binary matrix Bayesian language
      phylogenetics (Gray & Atkinson 2003 etc.) runs on.
@@ -196,7 +198,7 @@ def main():
 
     # ---- 3b. write BEAST2 XML (binary CTMC, strict clock, Yule) ----
     xml_path = os.path.join(BEAST_DIR, "cognates.xml")
-    write_beast_xml(xml_path, keep, label_of, matrix, n_chars, chain=1_000_000)
+    write_beast_xml(xml_path, keep, label_of, matrix, n_chars, chain=2_000_000)
     print(f"[3] wrote BEAST2 XML -> {xml_path}")
 
     # gold tree (Glottolog, fall back to taxonomy rows) on the SAME taxa
@@ -253,6 +255,22 @@ def main():
         print(f"    rf_triple: observed={triple['observed']:.3f} floor={triple['floor']:.3f} "
               f"null_p50={triple['null_p50']:.3f} rescaled={triple['rescaled']:.3f}")
         print(f"    gqd      : {g['gqd']:.3f} (resolved gold quartets {g['resolved_in_gold']})")
+        # render the MCC tree (coloured by family) + dump a result artifact so the
+        # notebook/README can cite the Bayesian arm without re-running BEAST2.
+        fam_by_label = {label_of[k]: fam_of[k] for k in keep}
+        fig_path = os.path.join(HERE, "figures", "beast_mcc_tree.png")
+        try:
+            save_mcc_figure(mcc, fam_by_label, fig_path)
+            print(f"[4] saved {fig_path}")
+        except Exception as fe:
+            print(f"[4] figure skipped ({fe})")
+        import json
+        res = {"languages": n_taxa, "cognate_chars": n_chars, "matrix_fill": fill,
+               "chain": 2_000_000, "rf_triple": triple, "gqd": g,
+               "skipped": [n for n, _ in skipped]}
+        with open(os.path.join(BEAST_DIR, "beast_result.json"), "w") as jf:
+            json.dump(res, jf, indent=2)
+        print(f"[4] wrote {os.path.join(BEAST_DIR, 'beast_result.json')}")
         _report(arm_done=True, n_taxa=n_taxa, n_chars=n_chars, fill=fill,
                 nexus=nexus_path, xml=xml_path, skipped=skipped,
                 mcc=mcc, gold=gold, labels=labels, triple=triple, gqd=g)
@@ -269,14 +287,14 @@ def write_beast_xml(path, keep, label_of, matrix, n_chars, chain=1_000_000):
     for k in keep:
         lab = label_of[k]
         seqs.append(
-            f'        <sequence id="seq_{lab}" spec="Sequence" taxon="{lab}" '
-            f'totalcount="2" value="{matrix[k]}"/>')
+            f'        <sequence id="seq_{lab}" spec="beast.base.evolution.alignment.Sequence" '
+            f'taxon="{lab}" totalcount="2" value="{matrix[k]}"/>')
     seq_block = "\n".join(seqs)
     log_every = max(1000, chain // 1000)
     xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<beast beautitemplate='Standard' beautistatus='' namespace="beast.core:beast.evolution.alignment:beast.evolution.tree.coalescent:beast.core.util:beast.evolution.nuc:beast.evolution.operators:beast.evolution.sitemodel:beast.evolution.substitutionmodel:beast.evolution.likelihood" required="" version="2.7">
+<beast beautitemplate='Standard' beautistatus='' namespace="beast.pkgmgmt:beast.base.core:beast.base.inference:beast.base.evolution.alignment:beast.base.evolution.tree:beast.base.evolution.tree.coalescent:beast.base.evolution.speciation:beast.base.evolution.operator:beast.base.inference.operator:beast.base.evolution.sitemodel:beast.base.evolution.substitutionmodel:beast.base.evolution.branchratemodel:beast.base.evolution.likelihood:beast.base.inference.util" required="" version="2.7">
 
-    <data id="cognates" spec="Alignment" dataType="binary">
+    <data id="cognates" spec="beast.base.evolution.alignment.Alignment" dataType="binary">
 {seq_block}
     </data>
 
@@ -292,20 +310,20 @@ def write_beast_xml(path, keep, label_of, matrix, n_chars, chain=1_000_000):
     <map name="OneOnX">beast.base.inference.distribution.OneOnX</map>
 
     <run id="mcmc" spec="beast.base.inference.MCMC" chainLength="{chain}">
-        <state id="state" spec="State" storeEvery="5000">
+        <state id="state" spec="beast.base.inference.State" storeEvery="5000">
             <tree id="Tree.t:cognates" spec="beast.base.evolution.tree.Tree" name="stateNode">
-                <taxonset id="TaxonSet.cognates" spec="TaxonSet">
+                <taxonset id="TaxonSet.cognates" spec="beast.base.evolution.alignment.TaxonSet">
                     <alignment idref="cognates"/>
                 </taxonset>
             </tree>
-            <parameter id="birthRate.t:cognates" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
-            <parameter id="clockRate.c:cognates" spec="parameter.RealParameter" name="stateNode">1.0</parameter>
-            <parameter id="freqParameter.s:cognates" spec="parameter.RealParameter" dimension="2" lower="0.0" name="stateNode" upper="1.0">0.5</parameter>
+            <parameter id="birthRate.t:cognates" spec="beast.base.inference.parameter.RealParameter" name="stateNode">1.0</parameter>
+            <parameter id="clockRate.c:cognates" spec="beast.base.inference.parameter.RealParameter" name="stateNode">1.0</parameter>
+            <parameter id="freqParameter.s:cognates" spec="beast.base.inference.parameter.RealParameter" dimension="2" lower="0.0" name="stateNode" upper="1.0">0.5</parameter>
         </state>
 
-        <init id="RandomTree.t:cognates" spec="beast.base.evolution.tree.RandomTree" estimate="false" initial="@Tree.t:cognates" taxa="@cognates">
+        <init id="RandomTree.t:cognates" spec="beast.base.evolution.tree.coalescent.RandomTree" estimate="false" initial="@Tree.t:cognates" taxa="@cognates">
             <populationModel id="ConstantPopulation0.t:cognates" spec="beast.base.evolution.tree.coalescent.ConstantPopulation">
-                <parameter id="randomPopSize.t:cognates" spec="parameter.RealParameter" name="popSize">1.0</parameter>
+                <parameter id="randomPopSize.t:cognates" spec="beast.base.inference.parameter.RealParameter" name="popSize">1.0</parameter>
             </populationModel>
         </init>
 
@@ -322,11 +340,11 @@ def write_beast_xml(path, keep, label_of, matrix, n_chars, chain=1_000_000):
             <distribution id="likelihood" spec="beast.base.inference.CompoundDistribution" useThreads="true">
                 <distribution id="treeLikelihood.cognates" spec="beast.base.evolution.likelihood.TreeLikelihood" data="@cognates" tree="@Tree.t:cognates">
                     <siteModel id="SiteModel.s:cognates" spec="beast.base.evolution.sitemodel.SiteModel">
-                        <parameter id="mutationRate.s:cognates" spec="parameter.RealParameter" estimate="false" name="mutationRate">1.0</parameter>
-                        <parameter id="gammaShape.s:cognates" spec="parameter.RealParameter" estimate="false" name="shape">1.0</parameter>
-                        <parameter id="proportionInvariant.s:cognates" spec="parameter.RealParameter" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
+                        <parameter id="mutationRate.s:cognates" spec="beast.base.inference.parameter.RealParameter" estimate="false" name="mutationRate">1.0</parameter>
+                        <parameter id="gammaShape.s:cognates" spec="beast.base.inference.parameter.RealParameter" estimate="false" name="shape">1.0</parameter>
+                        <parameter id="proportionInvariant.s:cognates" spec="beast.base.inference.parameter.RealParameter" estimate="false" lower="0.0" name="proportionInvariant" upper="1.0">0.0</parameter>
                         <substModel id="GeneralSubstitutionModel.s:cognates" spec="beast.base.evolution.substitutionmodel.GeneralSubstitutionModel">
-                            <parameter id="rates.s:cognates" spec="parameter.RealParameter" dimension="2" estimate="false" name="rates">1.0 1.0</parameter>
+                            <parameter id="rates.s:cognates" spec="beast.base.inference.parameter.RealParameter" dimension="2" estimate="false" name="rates">1.0 1.0</parameter>
                             <frequencies id="estimatedFreqs.s:cognates" spec="beast.base.evolution.substitutionmodel.Frequencies" frequencies="@freqParameter.s:cognates"/>
                         </substModel>
                     </siteModel>
@@ -335,24 +353,24 @@ def write_beast_xml(path, keep, label_of, matrix, n_chars, chain=1_000_000):
             </distribution>
         </distribution>
 
-        <operator id="YuleBirthRateScaler.t:cognates" spec="kernel.BactrianScaleOperator" parameter="@birthRate.t:cognates" upper="10.0" weight="3.0"/>
-        <operator id="CognatesTreeScaler.t:cognates" spec="kernel.BactrianScaleOperator" rootOnly="true" scaleFactor="0.5" tree="@Tree.t:cognates" upper="10.0" weight="3.0"/>
-        <operator id="CognatesTreeRootScaler.t:cognates" spec="kernel.BactrianScaleOperator" rootOnly="true" scaleFactor="0.5" tree="@Tree.t:cognates" upper="10.0" weight="3.0"/>
-        <operator id="CognatesUniformOperator.t:cognates" spec="kernel.BactrianNodeOperator" tree="@Tree.t:cognates" weight="30.0"/>
-        <operator id="CognatesSubtreeSlide.t:cognates" spec="kernel.BactrianSubtreeSlide" tree="@Tree.t:cognates" weight="15.0"/>
-        <operator id="CognatesNarrow.t:cognates" spec="Exchange" tree="@Tree.t:cognates" weight="15.0"/>
-        <operator id="CognatesWide.t:cognates" spec="Exchange" isNarrow="false" tree="@Tree.t:cognates" weight="3.0"/>
-        <operator id="CognatesWilsonBalding.t:cognates" spec="WilsonBalding" tree="@Tree.t:cognates" weight="3.0"/>
-        <operator id="StrictClockRateScaler.c:cognates" spec="kernel.BactrianScaleOperator" parameter="@clockRate.c:cognates" upper="10.0" weight="3.0"/>
-        <operator id="strictClockUpDownOperator.c:cognates" spec="kernel.BactrianUpDownOperator" scaleFactor="0.75" weight="3.0">
+        <operator id="YuleBirthRateScaler.t:cognates" spec="beast.base.evolution.operator.kernel.BactrianScaleOperator" parameter="@birthRate.t:cognates" upper="10.0" weight="3.0"/>
+        <operator id="CognatesTreeScaler.t:cognates" spec="beast.base.evolution.operator.kernel.BactrianScaleOperator" scaleFactor="0.5" tree="@Tree.t:cognates" upper="10.0" weight="3.0"/>
+        <operator id="CognatesTreeRootScaler.t:cognates" spec="beast.base.evolution.operator.kernel.BactrianScaleOperator" rootOnly="true" scaleFactor="0.5" tree="@Tree.t:cognates" upper="10.0" weight="3.0"/>
+        <operator id="CognatesUniformOperator.t:cognates" spec="beast.base.evolution.operator.kernel.BactrianNodeOperator" tree="@Tree.t:cognates" weight="30.0"/>
+        <operator id="CognatesSubtreeSlide.t:cognates" spec="beast.base.evolution.operator.kernel.BactrianSubtreeSlide" tree="@Tree.t:cognates" weight="15.0"/>
+        <operator id="CognatesNarrow.t:cognates" spec="beast.base.evolution.operator.Exchange" tree="@Tree.t:cognates" weight="15.0"/>
+        <operator id="CognatesWide.t:cognates" spec="beast.base.evolution.operator.Exchange" isNarrow="false" tree="@Tree.t:cognates" weight="3.0"/>
+        <operator id="CognatesWilsonBalding.t:cognates" spec="beast.base.evolution.operator.WilsonBalding" tree="@Tree.t:cognates" weight="3.0"/>
+        <operator id="StrictClockRateScaler.c:cognates" spec="beast.base.evolution.operator.kernel.BactrianScaleOperator" parameter="@clockRate.c:cognates" upper="10.0" weight="3.0"/>
+        <operator id="strictClockUpDownOperator.c:cognates" spec="beast.base.inference.operator.kernel.BactrianUpDownOperator" scaleFactor="0.75" weight="3.0">
             <up idref="clockRate.c:cognates"/>
             <down idref="Tree.t:cognates"/>
         </operator>
-        <operator id="FrequenciesExchanger.s:cognates" spec="kernel.BactrianDeltaExchangeOperator" delta="0.01" weight="0.1">
+        <operator id="FrequenciesExchanger.s:cognates" spec="beast.base.inference.operator.kernel.BactrianDeltaExchangeOperator" delta="0.01" weight="0.1">
             <parameter idref="freqParameter.s:cognates"/>
         </operator>
 
-        <logger id="tracelog" spec="Logger" fileName="cognates.log" logEvery="{log_every}" model="@posterior" sanitiseHeaders="true" sort="smart">
+        <logger id="tracelog" spec="beast.base.inference.Logger" fileName="cognates.log" logEvery="{log_every}" model="@posterior" sanitiseHeaders="true" sort="smart">
             <log idref="posterior"/>
             <log idref="likelihood"/>
             <log idref="prior"/>
@@ -364,17 +382,17 @@ def write_beast_xml(path, keep, label_of, matrix, n_chars, chain=1_000_000):
             <log idref="freqParameter.s:cognates"/>
         </logger>
 
-        <logger id="screenlog" spec="Logger" logEvery="{log_every}">
+        <logger id="screenlog" spec="beast.base.inference.Logger" logEvery="{log_every}">
             <log idref="posterior"/>
             <log idref="likelihood"/>
             <log idref="prior"/>
         </logger>
 
-        <logger id="treelog.t:cognates" spec="Logger" fileName="cognates.trees" logEvery="{log_every}" mode="tree">
+        <logger id="treelog.t:cognates" spec="beast.base.inference.Logger" fileName="cognates.trees" logEvery="{log_every}" mode="tree">
             <log id="TreeWithMetaDataLogger.t:cognates" spec="beast.base.evolution.TreeWithMetaDataLogger" tree="@Tree.t:cognates"/>
         </logger>
 
-        <operatorschedule id="OperatorSchedule" spec="OperatorSchedule"/>
+        <operatorschedule id="OperatorSchedule" spec="beast.base.inference.OperatorSchedule"/>
     </run>
 </beast>
 '''
@@ -392,12 +410,14 @@ def run_beast(exe, jar, xml_path, workdir):
 
 def run_treeannotator(exe, jar, trees, mcc):
     ta = (shutil.which("treeannotator") if exe else None)
+    # BEAST 2.7 renamed -heights -> -height (default CA = Common-Ancestor heights);
+    # use the default by omitting it so we don't depend on a method-name spelling.
     if ta:
-        cmd = [ta, "-burnin", "10", "-heights", "median", trees, mcc]
+        cmd = [ta, "-burnin", "10", trees, mcc]
     else:
         cmd = ["java", "-cp", os.path.dirname(jar) + "/*",
                "beastfx.app.treeannotator.TreeAnnotator",
-               "-burnin", "10", "-heights", "median", trees, mcc]
+               "-burnin", "10", trees, mcc]
     subprocess.run(cmd, check=True, timeout=600)
 
 
@@ -407,6 +427,58 @@ def read_mcc_newick(mcc_path, labels):
     tns = dendropy.TaxonNamespace()
     t = dendropy.Tree.get(path=mcc_path, schema="nexus", taxon_namespace=tns)
     return t.as_string(schema="newick").strip()
+
+
+def save_mcc_figure(mcc_path, fam_by_label, out_path):
+    """Draw the BEAST2 MCC phylogram (faithful branch lengths) coloured by family."""
+    import dendropy
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.lines import Line2D
+
+    tns = dendropy.TaxonNamespace()
+    t = dendropy.Tree.get(path=mcc_path, schema="nexus", taxon_namespace=tns,
+                          preserve_underscores=True)
+    leaves = list(t.leaf_node_iter())
+    yof = {lf: i for i, lf in enumerate(leaves)}
+    xof = {}
+    for node in t.preorder_node_iter():            # x = root->node distance
+        xof[node] = 0.0 if node.parent_node is None \
+            else xof[node.parent_node] + (node.edge.length or 0.0)
+    for node in t.postorder_node_iter():           # internal y = mean of children
+        if not node.is_leaf():
+            ys = [yof[c] for c in node.child_nodes()]
+            yof[node] = sum(ys) / len(ys)
+    fams = sorted(set(fam_by_label.values()))
+    cmap = plt.get_cmap("tab20")
+    fcol = {f: cmap(i % 20) for i, f in enumerate(fams)}
+    xmax = max(xof.values()) or 1.0
+
+    fig, ax = plt.subplots(figsize=(9, max(6, len(leaves) * 0.22)))
+    for node in t.preorder_node_iter():
+        if node.parent_node is not None:
+            ax.plot([xof[node.parent_node], xof[node]], [yof[node], yof[node]],
+                    color="0.45", lw=0.8)
+        kids = node.child_nodes()
+        if kids:
+            ys = [yof[c] for c in kids]
+            ax.plot([xof[node], xof[node]], [min(ys), max(ys)], color="0.45", lw=0.8)
+    for lf in leaves:
+        lab = lf.taxon.label if lf.taxon else str(lf)
+        fam = fam_by_label.get(lab, fam_by_label.get(lab.replace(" ", "_"), "?"))
+        ax.text(xof[lf] + 0.01 * xmax, yof[lf], lab.replace("_", " "),
+                va="center", fontsize=6, color=fcol.get(fam, "0.2"))
+    ax.set_yticks([])
+    ax.set_xlim(0, xmax * 1.25)
+    ax.set_xlabel("substitutions / site (MCC, common-ancestor heights)")
+    ax.set_title("BEAST2 Bayesian MCC tree — binary cognate matrix")
+    handles = [Line2D([0], [0], color=fcol[f], lw=3) for f in fams]
+    ax.legend(handles, fams, fontsize=6, ncol=2, loc="upper left",
+              bbox_to_anchor=(0.0, 0.98), frameon=False)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=140)
+    plt.close(fig)
 
 
 def _report(arm_done, n_taxa, n_chars, fill, nexus, xml, skipped, mcc, gold,

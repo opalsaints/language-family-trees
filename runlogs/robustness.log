@@ -1,0 +1,21 @@
+random-tree null normRF (COMPUTED, not assumed): p05=0.974 p50=1.000 p95=1.000 (min 0.948)
+family-NN chance floor: 0.308
+
+=== n-gram order sweep (romanized text) — reported on the true scale ===
+  n   normRF   floor  rescaled  family-NN
+  1    0.792   0.403     0.652      0.737
+  2    0.818   0.403     0.696      0.772
+  3    0.792   0.403     0.652      0.772
+  4    0.792   0.403     0.652      0.772
+  5    0.792   0.403     0.652      0.772
+Family-NN is flat across n (n=3 not cherry-picked); higher orders add little -> the signal is
+mostly frequency-level, and n=3 is reported alongside the whole curve, not tuned on the gold tree.
+
+=== VALID verse-block bootstrap (Felsenstein 1985; resamples aligned verses) ===
+  family-NN purity: 0.667  (95% CI 0.667-0.667)  [raw text, verse resampling]
+  normalized RF   : 0.896  (95% CI 0.870-0.896)  (well below the 1.00 random null)
+
+=== (contrast) old TOKEN bootstrap — NOT a valid CI ===
+  token-resample purity 0.772 (band 0.772-0.772); it resamples a FITTED multinomial,
+  not the data, so the band is mis-centred on the estimator bias and too narrow — shown only for contrast.
+saved figures/ngram_sweep.png

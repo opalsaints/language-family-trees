@@ -1,0 +1,17 @@
+ASJP covers 51/57 of our languages (avg 89 words each)
+  not in ASJP / too few words: Serbian, Latvian, Albanian, Nepali, Arabic, Syriac
+
+=== tree quality vs Glottolog gold (normalized RF, lower=better) ===
+  ASJP wordlist tree      : 0.594  (family-NN 0.804)
+  our romanized text tree : 0.797  (family-NN 0.725)
+  random-tree null        : 1.000 (p05 0.971)
+
+=== agreement: our text tree vs the ASJP wordlist standard (MANTEL test) ===
+  RF(text, ASJP) normalized = 0.625
+  Mantel r (romanized text vs ASJP) : 0.776  (p=0.0005)
+  Mantel r (RAW orthographic vs ASJP): 0.502  (p=0.0005)  <- independent of transcription
+  PARTIAL Mantel (controls same-family block): r=0.698 (p=0.0005)  <- agreement BEYOND coarse blocks
+  within-IE-only Mantel r: 0.855 (p=0.0005, n=27)
+Mantel (not a naive Pearson p) confirms our text tree and the field-standard wordlist method
+recover the same structure; the partial Mantel shows agreement survives removing coarse families.
+saved figures/asjp_tree.png

@@ -1,0 +1,67 @@
+========================================================================
+FLORES-200 modern-register replication of the Bible language tree
+========================================================================
+
+Matched 55/57 Bible languages to FLORES (by ISO 639-3 + script).
+Dropped 2 (no modern FLORES counterpart):
+    - Latin: no FLORES file for iso 'lat'
+    - Syriac: no FLORES file for iso 'syr'
+Script mismatches (2) — Bible vs FLORES use different scripts, so the RAW
+arm is not a same-script control for these (the romanized/IPA arm removes this); romanized arm is clean:
+    - Icelandic: Bible Ethiopic vs FLORES Latn
+    - Serbian: Bible Latin vs FLORES Cyrl
+
+Gold tree: 55 languages across 13 families (same gold scores BOTH corpora).
+Bible: 2000 verse-aligned verses/lang (<= 30k chars).
+FLORES: 2009 sentences/lang (dev+devtest); RAW arm capped to 30000 chars/lang to match the Bible budget.
+  sparse FLORES languages (K/N>0.30 -> noisy trigram distance, interpret with care):
+    Mandarin_Chinese: K/N=0.84
+    Japanese: K/N=0.66
+    Korean: K/N=0.56
+    Amharic: K/N=0.41
+    Thai: K/N=0.31
+
+--- RAW ARM (native scripts, full text) ---
+  [Bible  RAW      ] normRF 0.892 (floor 0.405, rescaled 0.818), GQD 0.351, family-NN 0.673 (chance 0.309, 8 ties) | alphabet-baseline 0.473 | union alphabet 2616
+  [FLORES RAW      ] normRF 0.838 (floor 0.405, rescaled 0.727), GQD 0.431, family-NN 0.673 (chance 0.309, 0 ties) | alphabet-baseline 0.400 | union alphabet 4295
+
+--- ROMANIZED ARM (uroman; FLORES capped to first 1000 sentences & 30000 chars/lang to match the Bible romanized budget) ---
+romanizing Bible (cached)...
+romanizing FLORES first 1000 sentences, <= 30000 chars (cached)...
+  [Bible  ROMANIZED] normRF 0.784 (floor 0.405, rescaled 0.636), GQD 0.202, family-NN 0.745 (chance 0.309, 0 ties) | alphabet-baseline 0.473 | union alphabet 26
+  [FLORES ROMANIZED] normRF 0.811 (floor 0.405, rescaled 0.682), GQD 0.237, family-NN 0.745 (chance 0.309, 0 ties) | alphabet-baseline 0.564 | union alphabet 28
+
+--- RANDOM-TREE NULL (normRF of random topologies vs gold) ---
+  random normRF: p50=1.000  p05=0.973  p95=1.000  min=0.973
+
+========================================================================
+SIDE-BY-SIDE: Bible (archaic) vs FLORES (modern), identical language set
+========================================================================
+  metric                                 |      Bible |     FLORES
+  ----------------------------------------------------------------
+  RAW trigram-JS normRF (vs gold)        |      0.892 |      0.838
+  RAW trigram-JS family-NN purity        |      0.673 |      0.673
+  RAW alphabet-baseline family-NN        |      0.473 |      0.400
+  RAW info-theory margin (tri - base)    |     +0.200 |     +0.273
+  ----------------------------------------------------------------
+  ROM trigram-JS normRF (vs gold)        |      0.784 |      0.811
+  ROM trigram-JS family-NN purity        |      0.745 |      0.745
+  ROM alphabet-baseline family-NN        |      0.473 |      0.564
+  ----------------------------------------------------------------
+  random-tree null normRF (p50)          |      1.000 |      1.000
+========================================================================
+
+INTERPRETATION
+------------------------------------------------------------------------
+RAW normRF:    Bible 0.892 vs FLORES 0.838 (diff 0.054) -> SAME ballpark
+RAW family-NN: Bible 0.673 vs FLORES 0.673 (diff 0.000) -> SAME ballpark
+FLORES beats dumb baseline?  trigram-JS family-NN 0.673 vs alphabet 0.400  -> margin +0.273 (YES)
+Both corpora beat random null (p50 1.000):  Bible 0.892 < 1.000 = True; FLORES 0.838 < 1.000 = True
+
+VERDICT: Family recovery on FLORES (modern Wikipedia register) is in the
+SAME ballpark as on the Bible (archaic register), beats the alphabet
+baseline, and beats the random null. The language-family tree is a
+property of the languages -- NOT a biblical-register artifact.
+
+saved /Users/jonathancowley/Downloads/Spring2026/ComplexityLab/LanguageTreeProject/figures/flores_tree.png
+done in 66s

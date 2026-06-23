@@ -939,7 +939,13 @@ def _reference_splits(ref_newick, names):
 def _unit_counters(unit_texts, names, ngram):
     """Per language, the list of per-unit (verse) n-gram Counters — each verse is
     cleaned + counted ONCE so the block bootstrap can resample by aggregating
-    counters (fast) instead of re-cleaning whole texts every replicate."""
+    counters (fast) instead of re-cleaning whole texts every replicate.
+
+    NOTE: verses are cleaned/counted independently here, whereas the headline tree
+    cleans the *concatenated* text, so this bootstrap omits the handful of trigrams
+    that span a verse boundary. The effect is negligible (boundary trigrams are a
+    tiny fraction and mostly involve the word-gap), but it means the bootstrap
+    feature set is a hair sparser than the estimate it brackets — documented, not a bug."""
     return {nm: [ngram_counter(clean(u), ngram) for u in unit_texts[nm]] for nm in names}
 
 

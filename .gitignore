@@ -4,3 +4,9 @@ __pycache__/
 .DS_Store
 corpus/
 *.tar.gz
+# BEAST2 MCMC outputs — bulky + fully regenerable from beast/cognates.xml
+beast/cognates.trees
+beast/cognates.log
+beast/cognates.xml.state
+# scratch run logs at repo root
+beast_run*.log

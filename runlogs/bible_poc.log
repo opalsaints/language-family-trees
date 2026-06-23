@@ -1,0 +1,20 @@
+Parsing 57 bibles ...
+common verses across all = 6741; using first 4000
+chars/lang: min=216398 max=619759
+
+HONEST BASELINES: family-NN chance floor = 0.308 (NOT 0; largest family = 31/57); genus-NN chance floor = 0.067
+method                          normRF (floor null) rescaled    GQD  fam-NN  ties
+----------------------------------------------------------------------------------
+trigram-JS (n=3)                 0.870  0.403 1.000    0.783  0.342   0.667     9
+unigram-JS (n=1)                 0.870  0.403 1.000    0.783  0.344   0.632     0
+alphabet-Jaccard (BASELINE)      0.948  0.403 1.000    0.913  0.555   0.439    21
+shuffle trigram-JS (CONTROL)     0.896  0.403 1.000    0.826  0.344   0.632     0
+----------------------------------------------------------------------------------
+HEADLINE (vs the DUMB baseline, on the true scale): trigram-JS rescaledRF 0.783 / GQD 0.342 / fam-NN 0.667  vs  alphabet rescaledRF 0.913 / GQD 0.555 / fam-NN 0.439  -> trigram-JS WINS
+  honest margins: fam-NN +0.228 over baseline, +0.358 over CHANCE (0.308).
+  unigram-JS fam-NN 0.632 vs trigram 0.667 -> order adds +0.035 (most signal is in the frequencies).
+  tie-robust fam-NN (JS=1.0 ties counted as misses): trigram 0.649 (9 undefined NN on raw cross-script).
+  genus-level fam... genus-NN purity 0.596 (genus chance 0.067); IE-only fam-NN 1.000 (n=31) vs non-IE-only 0.346 (n=26) -> the panel is IE-dominated; non-IE recovery is the harder, honest test.
+  bias check: corr(trigram-JS distance, max #trigrams K) = 0.396 (plug-in JS partly tracks vocabulary size).
+saved /Users/jonathancowley/Downloads/Spring2026/ComplexityLab/LanguageTreeProject/figures/bible_poc_trigram_tree.png
+done in 136.7s

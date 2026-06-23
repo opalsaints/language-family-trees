@@ -43,7 +43,7 @@ against its **chance floor** (~0.31 here, because Indo-European is 54% of the pa
 **Generalized Quartet Distance** (which *does* hit 0 for a correct refinement), a **valid verse-block
 bootstrap** (Felsenstein), **bias-corrected entropy**, and a battery of cross-checks
 (ASJP + Mantel, a cognate-based phylogeny, IPA, alternative distances, reticulation, a Glottolog gold
-tree, a GlotLID data-quality gate, and BEAST2 scaffolding).
+tree, a GlotLID data-quality gate, and a BEAST2 Bayesian MCMC).
 
 **Bottom line up front:** the result *survives* honest scrutiny — trigram-JS clearly beats the dumb
 baseline on the true scale and is **strongly validated by an independent cognate phylogeny** — but a
@@ -113,7 +113,8 @@ hand-typing, no circularity). We use a 57-language, ~13-family, multi-script sub
 metadata's discredited `Altaic`/`Altaic(?)` macro-family (a literal typo split Turkish from Korean) is
 normalised to Glottolog's `Turkic`/`Koreanic`/`Japonic` (separate families), and a stray
 `Icelandic→Ethiopic` script error is corrected — all in code (`biblecorpus.fix_family`), so it's
-reproducible. These leave 3 singleton families, capping purity at ~0.895 (reported below).
+reproducible. These leave 6 singleton families (Austro-Asiatic, Basque, Japonic, Koreanic, Tai-Kadai,
+Turkic), capping family-NN purity at 51/57 = ~0.895 (reported below).
 """)
 code(r"""
 d = bc.load(verse_cap=2000, char_cap=30000, return_units=True)   # equal budget; units for the bootstrap
@@ -339,7 +340,7 @@ md(r"""
 [ASJP](https://asjp.clld.org) is the standard **phonetic-wordlist** database (no writing-system
 confound). We build its tree for our languages (`asjp_tree.py`) and test agreement with a **Mantel
 permutation test** (the valid test for two distance matrices — *not* a naive Pearson p over
-non-independent pairs). Our text tree and the ASJP wordlist tree agree (**Mantel r ≈ 0.78, p = 0.0005, raw-arm r ≈ 0.50, partial-Mantel r ≈ 0.70, within-IE r ≈ 0.86**;
+non-independent pairs). Our text tree and the ASJP wordlist tree agree (**Mantel r ≈ 0.78, p ≤ 0.0005 (permutation floor, 1999 perms), raw-arm r ≈ 0.50, partial-Mantel r ≈ 0.70, within-IE r ≈ 0.86**;
 the **raw** orthographic arm — genuinely independent of ASJP's transcription — also agrees), and a
 **partial Mantel** shows agreement *survives removing the coarse major-family blocks*, i.e. there is
 real fine-scale agreement, strongest within Indo-European.
@@ -353,7 +354,7 @@ Character n-grams measure *surface form*. The decisive test is whether the same 
 genuine **descent-aware** method. We run **lingpy LexStat** cognate detection (a trained scorer) on the
 ASJP wordlists for our languages (`cognate_arm.py`), build a cognate-distance tree, and compare. It is a
 near-bullseye against the Glottolog gold (**GQD 0.032**, family-NN **0.84** vs chance 0.29) and it
-**agrees with our surface-text tree (Mantel r = 0.736, p = 0.0001)** and with ASJP (r = 0.924). So the
+**agrees with our surface-text tree (Mantel r = 0.736, p ≤ 0.0001 — permutation floor, 9999 perms)** and with ASJP (r = 0.924). So the
 text method recovers essentially the same structure as a real cognate phylogeny, by a completely
 different route — the single most reassuring cross-check in the project.
 """)
@@ -379,16 +380,19 @@ md(r"""
 **Distances compared** (`methods_compare.py`, romanized 57-set, each scored on the true scale): plug-in
 trigram-JS, **Lidstone-smoothed** JS, a **char-LM perplexity** distance (Gamallo 2017), and gzip NCD.
 Smoothing/perplexity reduce the vocabulary-size bias (corr(distance, K) drops from +0.06 to ≈0 / −0.14)
-while keeping family-NN. **Treelikeness** (`reticulation.py`): the Holland δ-score is lowest (most
-tree-like) for clean sub-families (Germanic 0.27, Slavic 0.30) and **higher in the Balkan contact zone
-(0.37 > 0.29 for a dispersed control)** — the borrowing/areal signal a single tree can't show, which the
-**NeighborNet** below visualizes.
+while keeping family-NN. **Treelikeness** (`reticulation.py`): the Holland δ-score is low (tree-like) for
+clean sub-families (Germanic 0.27, Slavic 0.30); the Balkan contact zone (0.37) is more reticulate than a
+matched **dispersed-IE control** (0.29) and a touch above the clean-clade mean (0.34) — a *weak* areal
+signal. We flag honestly that δ does **not** cleanly separate contact from ordinary within-clade diversity:
+**Romance**, a clean genus, has the **highest** δ in the panel (0.45), so δ tracks within-family spread as
+well as borrowing. Treat the contact-zone reading as suggestive, not decisive; the **NeighborNet** below
+visualizes the reticulation directly.
 """)
 code(r"""show_fig("methods_compare.png")""")
 code(r"""show_fig("neighbornet.png")""")
 
 md(r"""
-## 14. Gold-tree sensitivity, a data-quality gate, and Bayesian scaffolding
+## 14. Gold-tree sensitivity, a data-quality gate, and a Bayesian MCMC
 
 - **Glottolog gold tree** (`langtree.gold_newick_from_glottolog`): we can build the gold *programmatically*
   from Glottolog's genealogy (not the hand-maintained metadata) and confirm the headline conclusions are
@@ -397,10 +401,19 @@ md(r"""
   lines — the corpus is **clean** (Bible 97.6% / FLORES 98.8% predicted as the correct language; no
   Kazakh↔Russian-style contamination), so the trees aren't driven by mislabeled text.
 - **Bayesian phylogenetics (BEAST2)** (`beast_arm.py`): we code the cognate sets as a binary
-  presence/absence matrix (51 taxa × 557 characters) and emit a ready-to-run **BEAST2 XML** (binary CTMC,
-  Yule prior) + NEXUS. Running the MCMC is left as future work; the cognate-distance phylogeny in §11 is
-  our descent-based result for now.
+  presence/absence matrix (51 taxa × 557 characters), emit a **BEAST2 XML** (binary CTMC, strict clock,
+  Yule prior) + NEXUS, and **run the MCMC** (2M generations) + TreeAnnotator. The Bayesian MCC tree
+  scores **GQD 0.165 / rescaled-RF 0.233** vs the Glottolog gold — a third independent, model-based
+  validation that lands between the cognate-distance tree (§11, GQD 0.032) and the raw text tree
+  (§4, GQD 0.35). Slavic, Romance, Germanic, Dravidian, Austronesian, Bantu and Indo-Aryan all recover as
+  clean clades; isolates and single-representative families (Basque, Korean, Japanese, Greek) fall into a
+  loose, weakly-supported group — exactly where a sparse automated-cognate matrix is expected to struggle.
+  *Honest caveat:* the binary matrix keeps only variable cognate columns and the run is **not**
+  ascertainment-corrected (no Lewis-Mkv conditioning on variability), so the branch lengths/rates are not
+  calibrated — we compare only the **topology** (GQD/RF), which is robust to that omission. (Our automated
+  cognate coding here is plain normalised-Levenshtein single-linkage, *not* the trained LexStat scorer of §11.)
 """)
+code(r"""show_fig("beast_mcc_tree.png")""")
 
 md(r"""
 ## 15. Scale-up — 102 languages, 29 families
@@ -430,7 +443,7 @@ the 102-language breadth arm has a content confound; gzip-NCD is a crude proxy.
 entropy; a valid verse-block bootstrap + per-clade support; Neighbor-Joining (headline) with an
 additivity diagnostic; FLORES modern-register replication; ASJP + Mantel/partial-Mantel; a cognate-based
 descent phylogeny; an IPA negative result; alternative distances + reticulation/NeighborNet; a
-Glottolog gold tree; a GlotLID data-quality gate; BEAST2 scaffolding; and a 102-language scale-up.
+Glottolog gold tree; a GlotLID data-quality gate; a BEAST2 Bayesian MCMC; and a 102-language scale-up.
 
 ### References
 Shannon 1951; Benedetto, Caglioti & Loreto 2002 + Goodman 2002; Cilibrasi & Vitányi 2005; Bentz et al.

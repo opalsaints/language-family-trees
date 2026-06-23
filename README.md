@@ -27,8 +27,16 @@ between languages, not topics), build a tree, and score it against the Glottolog
   the n-gram *statistics* carry it. Most signal is frequency-level (unigrams ≈ trigrams).
 - **An independent cognate phylogeny validates it.** A LexStat cognate-distance tree (descent-based, not
   surface form) is a near-bullseye vs the gold (**GQD 0.032**, family-NN 0.84) and **agrees with our
-  text tree (Mantel r = 0.74, p = 0.0001)** and with ASJP (r = 0.92). Strongest cross-check in the project.
-- **Agrees with the field standard (ASJP).** Mantel **r ≈ 0.78** (p = 0.0005); the raw orthographic arm
+  text tree (Mantel r = 0.74, p ≤ 0.0001 — permutation floor, 0/9999 beat it)** and with ASJP (r = 0.92).
+  Strongest cross-check in the project.
+- **A Bayesian MCMC tree validates it too.** We code the cognate sets as a binary presence/absence matrix
+  (51 langs × 557 chars) and run **BEAST2** (binary CTMC, strict clock, Yule, 2M generations) → MCC tree:
+  **GQD 0.165 / rescaled-RF 0.233** vs the Glottolog gold — a third, model-based validation sitting between
+  the cognate-distance tree (0.032) and the raw text tree (0.35). Slavic/Romance/Germanic/Dravidian/
+  Austronesian/Bantu/Indo-Aryan all recover as clean clades. *Caveat:* the matrix keeps only variable
+  cognate columns and the run is **not** ascertainment-corrected (no Lewis-Mkv term), so treat branch
+  lengths as indicative; we compare the **topology** (GQD/RF), which is the robust part.
+- **Agrees with the field standard (ASJP).** Mantel **r ≈ 0.78** (p ≤ 0.0005, permutation floor); the raw orthographic arm
   (independent of ASJP's transcription) also agrees (r ≈ 0.50), and a **partial Mantel** shows the
   agreement survives removing coarse family blocks (r ≈ 0.70; within-IE r ≈ 0.86).
 - **Not a biblical-register artifact (FLORES-200).** The identical pipeline on modern Wikipedia-register
@@ -65,7 +73,7 @@ between languages, not topics), build a tree, and score it against the Glottolog
 | `methods_compare.py` | Alternative distances (plug-in / Lidstone / perplexity / NCD), bias diagnostics. |
 | `reticulation.py` | Treelikeness (δ-score) + NeighborNet (borrowing/areal signal). |
 | `corpus_check.py` | GlotLID language-ID data-quality gate (corpus is clean). |
-| `beast_arm.py` | BEAST2 Bayesian scaffolding (binary cognate matrix → NEXUS + XML). |
+| `beast_arm.py` | **BEAST2 Bayesian MCMC** — binary cognate matrix → NEXUS+XML → MCC tree (GQD 0.165 vs gold) + figure. |
 | `scale_up.py` | 102-language breadth run. |
 | `controls.py` | Latinate-orthography + vowelless-abjad control tests. |
 | `CRITICAL_REVIEW_23jun.md` | The 32-finding adversarial review + literature that drove this version. |

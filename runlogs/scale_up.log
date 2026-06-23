@@ -1,0 +1,12 @@
+scale-up: 102 languages (comparable Bible text, not verse-aligned), 29 families
+romanizing (cached)...
+family-NN chance floor at this breadth: 0.145
+CAVEAT: this arm uses align=False (each language's own first verses, NOT the identical verses), so
+full-Bible (OT+NT) vs NT-only languages differ in CONTENT; that content axis partly correlates with
+family -> read these as a breadth sanity-check, not a clean content-controlled result like the 57-set.
+
+=== results at scale ===
+  RAW        trigram-JS: normRF 0.883 (floor 0.445, rescaled 0.789), GQD 0.409~, family-NN 0.569 (chance 0.145, 14 ties) | alphabet-baseline family-NN 0.314
+  ROMANIZED  trigram-JS: normRF 0.825 (floor 0.445, rescaled 0.684), GQD 0.268~, family-NN 0.627 (chance 0.145, 0 ties) | alphabet-baseline family-NN 0.343
+  random-tree null normRF p50=1.000 (p05 0.985) -> trees far beat chance at scale too
+saved figures/scaleup_romanized_tree.png

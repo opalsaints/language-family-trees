@@ -1,0 +1,17 @@
+=== (A) English<->Romance: borrowing, or Latinate orthography? ===
+  English 'tio'/'ion' trigram rate: 0.29% of all trigrams
+  English-French   JS: 0.746 -> 0.748 (Δ +0.002) after removing the Latinate trigram family
+  English-Spanish  JS: 0.765 -> 0.766 (Δ +0.000) after removing the Latinate trigram family
+  English-Italian  JS: 0.766 -> 0.767 (Δ +0.001) after removing the Latinate trigram family
+  English-German   JS: 0.725 -> 0.724 (Δ -0.001) after removing the Latinate trigram family
+  English-Dutch    JS: 0.734 -> 0.734 (Δ -0.001) after removing the Latinate trigram family
+  If removing -tion/-ion/-ent moves English AWAY from Romance more than from Germanic,
+  the 'borrowing' signal is largely shared Latinate spelling, not genealogy.
+
+=== (B) Hebrew-Arabic: Semitic recovered, or a vowelless-abjad artifact? ===
+  Hebrew-Arabic JS (romanized, both vowelless): 0.763
+  Spanish-Hebrew JS: 0.949 -> 0.896 (Δ -0.053) after stripping Spanish's vowels
+  Italian-Hebrew JS: 0.958 -> 0.884 (Δ -0.074) after stripping Italian's vowels
+  Latin-Hebrew JS: 0.948 -> 0.886 (Δ -0.062) after stripping Latin's vowels
+  If stripping a vowel-rich language's vowels pulls it toward Hebrew, then part of the
+  Hebrew-Arabic 'reconnection' is shared vowellessness (abjad + uroman), not pure genealogy.

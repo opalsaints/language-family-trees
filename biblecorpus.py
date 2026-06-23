@@ -17,8 +17,9 @@ BIBLES = os.path.join(BASE, "bibles")
 # consensus, and a literal 'Altaic' vs 'Altaic(?)' typo split Turkish from Korean.
 # Fix to current top-level families (Turkic / Koreanic / Japonic as separate
 # isol./families — NOT force-merged) and strip '(?)' uncertainty markers so the
-# gold tree is reproducible and defensible. These leave 3 singletons in the 57-set,
-# so report the resulting purity ceiling (~0.895). Applied in load().
+# gold tree is reproducible and defensible. These leave 6 singletons in the 57-set
+# (Austro-Asiatic, Basque, Japonic, Koreanic, Tai-Kadai, Turkic), so report the
+# resulting purity ceiling (51/57 = ~0.895). Applied in load().
 FAMILY_FIXES = {"Altaic": "Turkic", "Altaic(?)": "Koreanic"}
 SCRIPT_FIXES = {"Icelandic": "Latin"}   # metadata 'Ethiopic' is a data error (Latin)
 

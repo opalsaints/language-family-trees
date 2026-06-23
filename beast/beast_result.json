@@ -1,0 +1,25 @@
+{
+  "languages": 51,
+  "cognate_chars": 557,
+  "matrix_fill": 0.07195409582145246,
+  "chain": 2000000,
+  "rf_triple": {
+    "observed": 0.41025641025641024,
+    "floor": 0.23076923076923078,
+    "null_p50": 1.0,
+    "rescaled": 0.2333333333333333
+  },
+  "gqd": {
+    "gqd": 0.16523602609488403,
+    "resolved_in_gold": 168922,
+    "approx": false
+  },
+  "skipped": [
+    "Serbian",
+    "Latvian",
+    "Albanian",
+    "Nepali",
+    "Arabic",
+    "Syriac"
+  ]
+}
