@@ -1,0 +1,49 @@
+Traceback (most recent call last):
+  File "/gpfs/scratch1/shared/jcowley/langtree/language-family-trees/reticulation.py", line 146, in <module>
+    sp_outline.run(
+  File "/scratch-shared/jcowley/langtree/venv/lib/python3.12/site-packages/splitspy/outline.py", line 166, in run
+    draw.draw(outfile, graph, angles, fit, win_width, win_height,m_left, m_right, m_top, m_bot, font_size)
+  File "/scratch-shared/jcowley/langtree/venv/lib/python3.12/site-packages/splitspy/graph/draw.py", line 56, in draw
+    font = ImageFont.truetype("Arial",size=font_size)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch-shared/jcowley/langtree/venv/lib/python3.12/site-packages/PIL/ImageFont.py", line 864, in truetype
+    return freetype(font)
+           ^^^^^^^^^^^^^^
+  File "/scratch-shared/jcowley/langtree/venv/lib/python3.12/site-packages/PIL/ImageFont.py", line 861, in freetype
+    return FreeTypeFont(font, size, index, encoding, layout_engine)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/scratch-shared/jcowley/langtree/venv/lib/python3.12/site-packages/PIL/ImageFont.py", line 277, in __init__
+    self.font = core.getfont(
+                ^^^^^^^^^^^^^
+OSError: cannot open resource
+loaded 57 langs, 2000 aligned verses; romanizing (cached)...
+romanization ready (13s)
+
+=== DELTA SCORES (Holland 2002; 0 = tree-like, higher = reticulate) ===
+   clade                    n   delta   note
+   WHOLE-SET               57  0.3324   all 57 (reference)
+   Germanic                 8  0.2662   single genus, clean
+   Romance                  5  0.4465   single genus, clean
+   Slavic                   9  0.2979   single genus, clean
+   Indo-Aryan               3   SKIP  (need >=4 langs) single subgenus, clean (n=3, will skip)
+   Indo-Iranian             4  0.3453   genus fallback for Indo-Aryan, clean
+   Balkan(contact)          5  0.3652   5 IE branches, areal Sprachbund
+   Dispersed-IE(ctrl)       5  0.2928   5 IE branches, NO contact zone
+
+=== INTERPRETATION ===
+   mean delta over clean single-genus clades : 0.3390
+   Balkan contact zone delta                 : 0.3652
+   dispersed-IE control delta                : 0.2928
+   whole-set delta                           : 0.3324
+   Balkan vs clean-clade mean   : HIGHER (more reticulate) (++0.0263)
+   Balkan vs dispersed control  : HIGHER (+0.0724)
+
+=== NeighborNet (splitspy) on whole-set JS(3-gram) ===
+   57 taxa -> figures/neighbornet.png
+
+=== NeighborNet FAILED ===
+   FAILED: OSError: cannot open resource
+   (delta scores above are still valid; NeighborNet is the visual only.)
+
+NeighborNet status: FAILED: OSError: cannot open resource
+done (37s)

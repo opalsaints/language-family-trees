@@ -1,0 +1,130 @@
+Warning : `load_model` does not return WordVectorModel or SupervisedModel any more, but a `FastText` object which is very similar.
+[loaded GlotLID] corpus/glotlid_cache/models--cis-lmu--glotlid/snapshots/85cd6716494360367b75f642b5bc78667605d0b4/model.bin  (2102 languages)
+[loading Bible corpus] verse_cap to feed up to 300 lines/lang
+
+========================================================================================================
+GlotLID CORPUS-PURITY GATE  (native script; sample up to 300 lines; flag < 70% in-target)
+========================================================================================================
+language           corpus expected                     %in-target    n    dominant_pred  dom%  flag
+--------------------------------------------------------------------------------------------------------
+Afrikaans          BIBLE  afr_Latn                          99.7%  300         afr_Latn  100%      
+Albanian           BIBLE  alb_Latn {aln/als/sqi}           100.0%  300         als_Latn  100%      
+Amharic            BIBLE  amh_Ethi                          99.3%  300         amh_Ethi   99%      
+Arabic             BIBLE  ara_Arab {acm/acq/aeb/ajp/apc/ara/arb/ars/ary/arz}      92.3%  300         arb_Arab   77%      
+Basque             BIBLE  eus_Latn                         100.0%  300         eus_Latn  100%      
+Bulgarian          BIBLE  bul_Cyrl                          99.7%  300         bul_Cyrl  100%      
+Burmese            BIBLE  mya_Mymr                         100.0%  300         mya_Mymr  100%      
+Cebuano            BIBLE  ceb_Latn                          99.7%  300         ceb_Latn  100%      
+Croatian           BIBLE  hrv_Latn                          79.7%  300         hrv_Latn   80%      
+Czech              BIBLE  ces_Latn                         100.0%  300         ces_Latn  100%      
+Danish             BIBLE  dan_Latn                          96.7%  300         dan_Latn   97%      
+Dutch              BIBLE  nld_Latn                          99.7%  300         nld_Latn  100%      
+English            BIBLE  eng_Latn                          99.7%  300         eng_Latn  100%      
+Farsi_Persian      BIBLE  pes_Arab {fas/pes/prs}            99.3%  300         fas_Arab   99%      
+Finnish            BIBLE  fin_Latn                          99.0%  300         fin_Latn   99%      
+French             BIBLE  fra_Latn                         100.0%  300         fra_Latn  100%      
+German             BIBLE  deu_Latn                          99.3%  300         deu_Latn   99%      
+Greek              BIBLE  ell_Grek                          81.7%  300         ell_Grek   82%      
+Hebrew             BIBLE  heb_Hebr                         100.0%  300         heb_Hebr  100%      
+Hindi              BIBLE  hin_Deva                          84.3%  300         hin_Deva   84%      
+Hungarian          BIBLE  hun_Latn                         100.0%  300         hun_Latn  100%      
+Icelandic          BIBLE  isl_Latn                          99.7%  300         isl_Latn  100%      
+Indonesian         BIBLE  ind_Latn                          94.7%  300         ind_Latn   95%      
+Italian            BIBLE  ita_Latn                          98.3%  300         ita_Latn   98%      
+Japanese           BIBLE  jpn_Jpan                         100.0%  300         jpn_Jpan  100%      
+Kannada            BIBLE  kan_Knda                         100.0%  300         kan_Knda  100%      
+Korean             BIBLE  kor_Hang                         100.0%  300         kor_Hang  100%      
+Latin              BIBLE  lat_Latn                          99.3%  300         lat_Latn   99%      
+Latvian            BIBLE  lav_Latn {ltg/lvs}                98.7%  300         lvs_Latn   99%      
+Lithuanian         BIBLE  lit_Latn                          99.7%  300         lit_Latn  100%      
+Malagasy           BIBLE  plt_Latn                         100.0%  300         plt_Latn  100%      
+Malayalam          BIBLE  mal_Mlym                         100.0%  300         mal_Mlym  100%      
+Mandarin_Chinese   BIBLE  cmn_Hani                          97.7%  300         cmn_Hani   98%      
+Maori              BIBLE  mri_Latn                         100.0%  300         mri_Latn  100%      
+Marathi            BIBLE  mar_Deva                         100.0%  300         mar_Deva  100%      
+Nepali             BIBLE  nep_Deva {nep/npi}                99.7%  300         npi_Deva  100%      
+Norwegian          BIBLE  nor_Latn {nno/nob}                94.7%  300         nob_Latn   95%      
+Polish             BIBLE  pol_Latn                          99.7%  300         pol_Latn  100%      
+Portuguese         BIBLE  por_Latn                          99.0%  300         por_Latn   99%      
+Romanian           BIBLE  ron_Latn                          99.7%  300         ron_Latn  100%      
+Russian            BIBLE  rus_Cyrl                          96.7%  300         rus_Cyrl   97%      
+Serbian            BIBLE  srp_Latn                          88.0%  300         srp_Latn   88%      
+Shona              BIBLE  sna_Latn                          98.7%  300         sna_Latn   99%      
+Slovak             BIBLE  slk_Latn                          98.3%  300         slk_Latn   98%      
+Slovene            BIBLE  slv_Latn                          98.7%  300         slv_Latn   99%      
+Spanish            BIBLE  spa_Latn                          98.3%  300         spa_Latn   98%      
+Swahili            BIBLE  swh_Latn                          91.3%  300         swh_Latn   91%      
+Swedish            BIBLE  swe_Latn                         100.0%  300         swe_Latn  100%      
+Syriac             BIBLE  syr_Syrc {aii/cld/syc/syr}       100.0%  300         syc_Syrc  100%      
+Tagalog            BIBLE  tgl_Latn {fil/tgl}               100.0%  300         fil_Latn  100%      
+Telugu             BIBLE  tel_Telu                         100.0%  300         tel_Telu  100%      
+Thai               BIBLE  tha_Thai                         100.0%  300         tha_Thai  100%      
+Turkish            BIBLE  tur_Latn                          99.7%  300         tur_Latn  100%      
+Ukranian           BIBLE  ukr_Cyrl                          99.3%  300         ukr_Cyrl   99%      
+Vietnamese         BIBLE  vie_Latn                         100.0%  300         vie_Latn  100%      
+Xhosa              BIBLE  xho_Latn                          98.3%  300         xho_Latn   98%      
+Zulu               BIBLE  zul_Latn                          87.7%  300         zul_Latn   88%      
+Afrikaans          FLORES afr_Latn                         100.0%  300         afr_Latn  100%      
+Albanian           FLORES alb_Latn {aln/als/sqi}  [FLORES=als_Latn]     100.0%  300         als_Latn  100%      
+Amharic            FLORES amh_Ethi                          99.7%  300         amh_Ethi  100%      
+Arabic             FLORES ara_Arab {acm/acq/aeb/ajp/apc/ara/arb/ars/ary/arz}  [FLORES=acm_Arab]      99.3%  300         acm_Arab   93%      
+Basque             FLORES eus_Latn                         100.0%  300         eus_Latn  100%      
+Bulgarian          FLORES bul_Cyrl                         100.0%  300         bul_Cyrl  100%      
+Burmese            FLORES mya_Mymr                         100.0%  300         mya_Mymr  100%      
+Cebuano            FLORES ceb_Latn                          97.0%  300         ceb_Latn   97%      
+Croatian           FLORES hrv_Latn                          83.7%  300         hrv_Latn   84%      
+Czech              FLORES ces_Latn                         100.0%  300         ces_Latn  100%      
+Danish             FLORES dan_Latn                          98.7%  300         dan_Latn   99%      
+Dutch              FLORES nld_Latn                          98.7%  300         nld_Latn   99%      
+English            FLORES eng_Latn                          99.7%  300         eng_Latn  100%      
+Farsi_Persian      FLORES pes_Arab {fas/pes/prs}           100.0%  300         fas_Arab  100%      
+Finnish            FLORES fin_Latn                         100.0%  300         fin_Latn  100%      
+French             FLORES fra_Latn                          99.7%  300         fra_Latn  100%      
+German             FLORES deu_Latn                         100.0%  300         deu_Latn  100%      
+Greek              FLORES ell_Grek                         100.0%  300         ell_Grek  100%      
+Hebrew             FLORES heb_Hebr                         100.0%  300         heb_Hebr  100%      
+Hindi              FLORES hin_Deva                          79.7%  300         hin_Deva   80%      
+Hungarian          FLORES hun_Latn                         100.0%  300         hun_Latn  100%      
+Icelandic          FLORES isl_Latn                         100.0%  300         isl_Latn  100%      
+Indonesian         FLORES ind_Latn                          98.3%  300         ind_Latn   98%      
+Italian            FLORES ita_Latn                         100.0%  300         ita_Latn  100%      
+Japanese           FLORES jpn_Jpan                         100.0%  300         jpn_Jpan  100%      
+Kannada            FLORES kan_Knda                         100.0%  300         kan_Knda  100%      
+Korean             FLORES kor_Hang                         100.0%  300         kor_Hang  100%      
+Latvian            FLORES lav_Latn {ltg/lvs}  [FLORES=ltg_Latn]     100.0%  300         ltg_Latn  100%      
+Lithuanian         FLORES lit_Latn                         100.0%  300         lit_Latn  100%      
+Malagasy           FLORES plt_Latn                          99.3%  300         plt_Latn   99%      
+Malayalam          FLORES mal_Mlym                         100.0%  300         mal_Mlym  100%      
+Mandarin_Chinese   FLORES cmn_Hani  [FLORES=zho_Hans]       96.3%  300         cmn_Hani   96%      
+Maori              FLORES mri_Latn                         100.0%  300         mri_Latn  100%      
+Marathi            FLORES mar_Deva                         100.0%  300         mar_Deva  100%      
+Nepali             FLORES nep_Deva {nep/npi}  [FLORES=npi_Deva]     100.0%  300         npi_Deva  100%      
+Norwegian          FLORES nor_Latn {nno/nob}  [FLORES=nno_Latn]      99.7%  300         nno_Latn   97%      
+Polish             FLORES pol_Latn                         100.0%  300         pol_Latn  100%      
+Portuguese         FLORES por_Latn                         100.0%  300         por_Latn  100%      
+Romanian           FLORES ron_Latn                         100.0%  300         ron_Latn  100%      
+Russian            FLORES rus_Cyrl                         100.0%  300         rus_Cyrl  100%      
+Serbian            FLORES srp_Latn  [FLORES=srp_Cyrl]      100.0%  300         srp_Cyrl  100%      
+Shona              FLORES sna_Latn                          99.7%  300         sna_Latn  100%      
+Slovak             FLORES slk_Latn                          99.7%  300         slk_Latn  100%      
+Slovene            FLORES slv_Latn                          99.3%  300         slv_Latn   99%      
+Spanish            FLORES spa_Latn                          99.7%  300         spa_Latn  100%      
+Swahili            FLORES swh_Latn                          99.3%  300         swh_Latn   99%      
+Swedish            FLORES swe_Latn                          99.7%  300         swe_Latn  100%      
+Tagalog            FLORES tgl_Latn {fil/tgl}               100.0%  300         fil_Latn  100%      
+Telugu             FLORES tel_Telu                         100.0%  300         tel_Telu  100%      
+Thai               FLORES tha_Thai                         100.0%  300         tha_Thai  100%      
+Turkish            FLORES tur_Latn                         100.0%  300         tur_Latn  100%      
+Ukranian           FLORES ukr_Cyrl                         100.0%  300         ukr_Cyrl  100%      
+Vietnamese         FLORES vie_Latn                         100.0%  300         vie_Latn  100%      
+Xhosa              FLORES xho_Latn                          97.7%  300         xho_Latn   98%      
+Zulu               FLORES zul_Latn                          91.0%  300         zul_Latn   91%      
+--------------------------------------------------------------------------------------------------------
+BIBLE : 57 langs, mean %in-target = 97.6%, 0 flagged
+FLORES: 55 langs, mean %in-target = 98.8%, 0 flagged
+
+No languages flagged: every corpus/language is >= 70% in-target.
+
+--- SKIPPED (2) ---
+   skip  Latin              [FLORES]  no FLORES file for lat_Latn or aliases
+   skip  Syriac             [FLORES]  no FLORES file for syr_Syrc or aliases

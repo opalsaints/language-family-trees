@@ -1,0 +1,111 @@
+loaded 57 langs, 2000 aligned verses
+transcribing to IPA (epitran, cached)...
+  IPA German           (2/57) deu-Latn  30000ch -> 30881ch in 25.3s
+  IPA Dutch            (3/57) nld-Latn  30000ch -> 29777ch in 25.4s
+  IPA Swedish          (4/57) swe-Latn  30000ch -> 35967ch in 33.5s
+  IPA Norwegian        (7/57) nno-Latn  30000ch -> 29778ch in 28.3s
+  IPA Afrikaans        (8/57) afr-Latn  30000ch -> 32177ch in 25.4s
+  IPA French           (9/57) fra-Latn  30000ch -> 28318ch in 27.9s
+  IPA Spanish          (10/57) spa-Latn  30000ch -> 29441ch in 26.0s
+  IPA Italian          (11/57) ita-Latn  30000ch -> 29733ch in 26.7s
+  IPA Portuguese       (12/57) por-Latn  30000ch -> 30015ch in 28.5s
+  IPA Romanian         (13/57) ron-Latn  30000ch -> 30748ch in 33.6s
+  IPA Russian          (15/57) rus-Cyrl  30000ch -> 30797ch in 47.6s
+  IPA Polish           (16/57) pol-Latn  30000ch -> 31261ch in 32.4s
+  IPA Czech            (17/57) ces-Latn  30000ch -> 32594ch in 35.7s
+  IPA Serbian          (19/57) srp-Latn  30000ch -> 31824ch in 29.6s
+  IPA Croatian         (20/57) hrv-Latn  30000ch -> 30811ch in 29.2s
+  IPA Slovene          (22/57) slv-Latn  30000ch -> 30377ch in 29.8s
+  IPA Ukranian         (23/57) ukr-Cyrl  30000ch -> 31462ch in 49.7s
+  IPA Lithuanian       (24/57) lit-Latn  30000ch -> 32314ch in 31.6s
+  IPA Latvian          (25/57) lav-Latn  30000ch -> 34105ch in 32.5s
+  IPA Finnish          (26/57) fin-Latn  30000ch -> 30064ch in 28.9s
+  IPA Hungarian        (27/57) hun-Latn  30000ch -> 30852ch in 31.5s
+  IPA Albanian         (29/57) sqi-Latn  30000ch -> 28830ch in 31.9s
+  IPA Hindi            (30/57) hin-Deva  30000ch -> 50123ch in 47.9s
+  IPA Farsi_Persian    (31/57) fas-Arab  30000ch -> 30614ch in 48.0s
+  IPA Marathi          (33/57) mar-Deva  30000ch -> 51948ch in 49.5s
+  IPA Kannada          (34/57) kan-Knda  30000ch -> 35732ch in 50.8s
+  IPA Malayalam        (35/57) mal-Mlym  30000ch -> 47520ch in 50.1s
+  IPA Telugu           (36/57) tel-Telu  30000ch -> 47494ch in 50.4s
+  IPA Turkish          (37/57) tur-Latn  30000ch -> 30955ch in 33.4s
+  IPA Arabic           (39/57) ara-Arab  30000ch -> 37490ch in 47.8s
+  IPA Amharic          (40/57) amh-Ethi  30000ch -> 54174ch in 50.8s
+  IPA Korean           (43/57) kor-Hang  30000ch -> 67811ch in 219.2s
+  IPA Japanese         (44/57) jpn-Hira  30000ch -> 45337ch in 50.1s
+  IPA Vietnamese       (45/57) vie-Latn  30000ch -> 27848ch in 38.3s
+  IPA Thai             (46/57) tha-Thai  30000ch -> 57198ch in 51.5s
+  IPA Burmese          (47/57) mya-Mymr  30000ch -> 35911ch in 36.3s
+  IPA Indonesian       (48/57) ind-Latn  30000ch -> 29685ch in 25.1s
+  IPA Tagalog          (49/57) tgl-Latn  30000ch -> 28660ch in 24.2s
+  IPA Cebuano          (50/57) ceb-Latn  30000ch -> 28938ch in 25.0s
+  IPA Maori            (52/57) mri-Latn  30000ch -> 29350ch in 25.1s
+  IPA Swahili          (53/57) swa-Latn  30000ch -> 29807ch in 24.9s
+  IPA Xhosa            (54/57) xho-Latn  30000ch -> 31741ch in 24.7s
+  IPA Shona            (55/57) sna-Latn  30000ch -> 30407ch in 23.9s
+  IPA Zulu             (56/57) zul-Latn  30000ch -> 29135ch in 24.4s
+
+IPA coverage: 44/57 languages transcribed; 13 skipped
+SKIPPED (graceful):
+  - English          epitran code eng-Latn not installed
+  - Danish           no epitran map (iso=dan, script=Latin)
+  - Icelandic        no epitran map (iso=isl, script=Latin)
+  - Latin            no epitran map (iso=lat, script=Latin)
+  - Bulgarian        no epitran map (iso=bul, script=Cyrillic)
+  - Slovak           no epitran map (iso=slk, script=Latin)
+  - Greek            no epitran map (iso=ell, script=Greek)
+  - Nepali           no epitran map (iso=nep, script=Devanagari)
+  - Hebrew           no epitran map (iso=heb, script=Hebrew)
+  - Syriac           no epitran map (iso=syr, script=Syriac)
+  - Mandarin_Chinese no epitran map (iso=cmn, script=Chinese)
+  - Malagasy         no epitran map (iso=plt, script=Latin)
+  - Basque           no epitran map (iso=eus, script=Latin)
+
+======================================================================
+IPA vs uroman vs RAW on the SAME 44-language IPA-covered subset
+======================================================================
+
+[RAW (native scripts)]  union alphabet/IPA-inventory = 1991 symbols
+  family-NN purity   = 0.659 (tie=miss 0.659, 7 ties, chance floor 0.285, n=44)
+  alphabet-baseline family-NN = 0.477  (info-theory margin +0.182)
+  tree-vs-gold rf_triple: observed normRF=0.672, floor=0.344, null_p50=1.000, rescaled=0.500
+  tree-vs-gold GQD     = 0.306  (0 = correct/refinement; resolved_in_gold=85740)
+
+[UROMAN (Latin, vowels dropped for abjad/abugida)]  union alphabet/IPA-inventory = 26 symbols
+  family-NN purity   = 0.727 (tie=miss 0.727, 0 ties, chance floor 0.285, n=44)
+  alphabet-baseline family-NN = 0.432  (info-theory margin +0.295)
+  tree-vs-gold rf_triple: observed normRF=0.607, floor=0.344, null_p50=1.000, rescaled=0.400
+  tree-vs-gold GQD     = 0.182  (0 = correct/refinement; resolved_in_gold=85740)
+
+[IPA (epitran, vowels RESTORED)]  union alphabet/IPA-inventory = 787 symbols
+  family-NN purity   = 0.659 (tie=miss 0.659, 0 ties, chance floor 0.285, n=44)
+  alphabet-baseline family-NN = 0.614  (info-theory margin +0.045)
+  tree-vs-gold rf_triple: observed normRF=0.869, floor=0.344, null_p50=1.000, rescaled=0.800
+  tree-vs-gold GQD     = 0.447  (0 = correct/refinement; resolved_in_gold=85740)
+
+======================================================================
+CROSS-SCRIPT TEST PAIRS — trigram-JS distance (lower = closer)
+  RAW (native) -> UROMAN -> IPA
+======================================================================
+
+  -- REQUESTED --
+  Hebrew        -Arabic      : SKIP — not IPA-covered (Hebrew)
+  Telugu        -Kannada     : raw 1.000 -> uroman 0.546 -> IPA 0.969   [uroman closer]
+  Greek         -Latin       : SKIP — not IPA-covered (Greek, Latin)
+
+  -- ADDITIONAL (IPA-covered) --
+  Telugu        -Malayalam   : raw 1.000 -> uroman 0.644 -> IPA 0.973   [uroman closer]
+  Kannada       -Malayalam   : raw 1.000 -> uroman 0.630 -> IPA 0.931   [uroman closer]
+  Russian       -Polish      : raw 1.000 -> uroman 0.745 -> IPA 0.840   [uroman closer]
+  Russian       -Ukranian    : raw 0.598 -> uroman 0.544 -> IPA 0.910   [uroman closer]
+  Farsi_Persian -Arabic      : raw 0.829 -> uroman 0.738 -> IPA 0.936   [uroman closer]
+  Hindi         -Marathi     : raw 0.732 -> uroman 0.557 -> IPA 0.492   [IPA closer]
+
+saved figures/ipa_tree.png
+
+======================================================================
+SUMMARY (same IPA-covered subset)
+  family-NN purity : RAW 0.659 | uroman 0.727 | IPA 0.659 (chance 0.285)
+  rf_triple rescaled: RAW 0.500 | uroman 0.400 | IPA 0.800
+  GQD vs gold      : RAW 0.306 | uroman 0.182 | IPA 0.447
+done in 1891s

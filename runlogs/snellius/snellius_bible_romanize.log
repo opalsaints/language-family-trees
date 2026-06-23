@@ -1,0 +1,76 @@
+loaded 57 langs, 2000 verses; romanizing (cached)...
+  romanized English (1/57) 30000ch in 2.4s
+  romanized German (2/57) 30000ch in 2.2s
+  romanized Dutch (3/57) 30000ch in 2.3s
+  romanized Swedish (4/57) 30000ch in 2.3s
+  romanized Danish (5/57) 30000ch in 2.3s
+  romanized Icelandic (6/57) 30000ch in 2.3s
+  romanized Norwegian (7/57) 30000ch in 2.2s
+  romanized Afrikaans (8/57) 30000ch in 2.2s
+  romanized French (9/57) 30000ch in 2.3s
+  romanized Spanish (10/57) 30000ch in 2.3s
+  romanized Italian (11/57) 30000ch in 2.4s
+  romanized Portuguese (12/57) 30000ch in 2.2s
+  romanized Romanian (13/57) 30000ch in 2.3s
+  romanized Latin (14/57) 30000ch in 2.4s
+  romanized Russian (15/57) 30000ch in 2.4s
+  romanized Polish (16/57) 30000ch in 2.3s
+  romanized Czech (17/57) 30000ch in 2.3s
+  romanized Bulgarian (18/57) 30000ch in 2.4s
+  romanized Serbian (19/57) 30000ch in 2.4s
+  romanized Croatian (20/57) 30000ch in 2.4s
+  romanized Slovak (21/57) 30000ch in 2.3s
+  romanized Slovene (22/57) 30000ch in 2.2s
+  romanized Ukranian (23/57) 30000ch in 2.4s
+  romanized Lithuanian (24/57) 30000ch in 2.3s
+  romanized Latvian (25/57) 30000ch in 2.3s
+  romanized Finnish (26/57) 30000ch in 2.3s
+  romanized Hungarian (27/57) 30000ch in 2.3s
+  romanized Greek (28/57) 30000ch in 2.4s
+  romanized Albanian (29/57) 30000ch in 2.2s
+  romanized Hindi (30/57) 30000ch in 2.4s
+  romanized Farsi_Persian (31/57) 30000ch in 2.3s
+  romanized Nepali (32/57) 30000ch in 2.4s
+  romanized Marathi (33/57) 30000ch in 2.4s
+  romanized Kannada (34/57) 30000ch in 2.5s
+  romanized Malayalam (35/57) 30000ch in 2.3s
+  romanized Telugu (36/57) 30000ch in 2.5s
+  romanized Turkish (37/57) 30000ch in 2.3s
+  romanized Hebrew (38/57) 30000ch in 2.4s
+  romanized Arabic (39/57) 30000ch in 2.2s
+  romanized Amharic (40/57) 30000ch in 2.4s
+  romanized Syriac (41/57) 30000ch in 2.3s
+  romanized Mandarin_Chinese (42/57) 30000ch in 2.1s
+  romanized Korean (43/57) 30000ch in 1.9s
+  romanized Japanese (44/57) 30000ch in 2.4s
+  romanized Vietnamese (45/57) 30000ch in 2.2s
+  romanized Thai (46/57) 30000ch in 3.2s
+  romanized Burmese (47/57) 30000ch in 2.6s
+  romanized Indonesian (48/57) 30000ch in 2.3s
+  romanized Tagalog (49/57) 30000ch in 2.3s
+  romanized Cebuano (50/57) 30000ch in 2.4s
+  romanized Malagasy (51/57) 30000ch in 2.3s
+  romanized Maori (52/57) 30000ch in 2.3s
+  romanized Swahili (53/57) 30000ch in 2.3s
+  romanized Xhosa (54/57) 30000ch in 2.3s
+  romanized Shona (55/57) 30000ch in 2.2s
+  romanized Zulu (56/57) 30000ch in 2.2s
+  romanized Basque (57/57) 30000ch in 2.4s
+romanization ready (149s)
+
+=== RAW vs ROMANIZED ===
+  RAW        | trigram-JS: normRF 0.896, family-NN 0.667 | alphabet-baseline family-NN 0.474 | union alphabet 2638
+  ROMANIZED  | trigram-JS: normRF 0.792, family-NN 0.772 | alphabet-baseline family-NN 0.474 | union alphabet 26
+
+=== cross-script family pairs: JS distance (raw -> romanized) ===
+  Hebrew  -Arabic   : 1.000 -> 0.763
+  Hebrew  -Amharic  : 1.000 -> 0.967
+  Russian -Polish   : 1.000 -> 0.745
+  Telugu  -Kannada  : 1.000 -> 0.546
+  Greek   -Latin    : 1.000 -> 0.769
+  Russian -Bulgarian: 0.570 -> 0.544
+
+D1 verdict (romanized, common-alphabet regime): trigram-JS family-NN 0.772 vs alphabet-baseline 0.474 -> info-theory margin = +0.298
+saved figures/bible_romanized_tree.png
+saved figures/romanization_purity.png
+done in 162s

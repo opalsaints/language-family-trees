@@ -1,0 +1,30 @@
+============================================================================================
+ARM  --  alternative-distance comparison (ROMANIZED curated set, UPGMA, same gold)
+============================================================================================
+languages          : 57
+families            : 13  ['Afro-Asiatic', 'Austro-Asiatic', 'Austronesian', 'Basque', 'Dravidian', 'Indo-European', 'Japonic', 'Koreanic', 'Niger-Congo', 'Sino-Tibetan', 'Tai-Kadai', 'Turkic', 'Uralic']
+K (distinct 3-grams): min=525  median=1754  max=2310
+NN chance floor      : 0.308
+rf_triple null draws : 300    tree method: UPGMA
+--------------------------------------------------------------------------------------------
+[1] trigram-JS plug-in (alpha=0)        built in   4.3s
+[2] trigram-JS Lidstone (alpha=0.3)     built in   4.6s
+[3] perplexity (Gamallo char-LM)        built in  95.8s
+[4] gzip NCD (per-pair floor)           built in  14.9s
+--------------------------------------------------------------------------------------------
+
+COMPARISON TABLE  (lower RF_resc / GQD = better; NN_pur above chance = better;
+                   r(d,*) near 0 = less vocabulary-size bias)
+=================================================================================================================
+method                        RF_obs  RF_flr RF_null RF_resc |    GQD |  NN_pur chance ties | r(d,maxK) r(d,|dK|)
+-----------------------------------------------------------------------------------------------------------------
+trigram-JS plug-in (a=0)       0.792   0.403   1.000   0.652 |  0.198 |   0.772  0.308    0 |     0.057     0.273
+trigram-JS Lidstone (a=0.3)    0.740   0.403   1.000   0.565 |  0.207 |   0.772  0.308    0 |    -0.009     0.297
+perplexity char-LM (a=0.1)     0.766   0.403   1.000   0.609 |  0.211 |   0.737  0.308    0 |    -0.136     0.254
+gzip NCD (per-pair floor)      0.740   0.403   1.000   0.565 |  0.326 |   0.719  0.308    0 |     0.266     0.237
+=================================================================================================================
+note: GQD computed exactly (approx=False) for all methods.
+
+saved figure: /gpfs/scratch1/shared/jcowley/langtree/language-family-trees/figures/methods_compare.png
+
+total wall time: 164.5s
