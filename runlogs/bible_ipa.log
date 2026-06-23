@@ -1,0 +1,67 @@
+loaded 57 langs, 2000 aligned verses
+transcribing to IPA (epitran, cached)...
+
+IPA coverage: 44/57 languages transcribed; 13 skipped
+SKIPPED (graceful):
+  - English          epitran code eng-Latn not installed
+  - Danish           no epitran map (iso=dan, script=Latin)
+  - Icelandic        no epitran map (iso=isl, script=Latin)
+  - Latin            no epitran map (iso=lat, script=Latin)
+  - Bulgarian        no epitran map (iso=bul, script=Cyrillic)
+  - Slovak           no epitran map (iso=slk, script=Latin)
+  - Greek            no epitran map (iso=ell, script=Greek)
+  - Nepali           no epitran map (iso=nep, script=Devanagari)
+  - Hebrew           no epitran map (iso=heb, script=Hebrew)
+  - Syriac           no epitran map (iso=syr, script=Syriac)
+  - Mandarin_Chinese no epitran map (iso=cmn, script=Chinese)
+  - Malagasy         no epitran map (iso=plt, script=Latin)
+  - Basque           no epitran map (iso=eus, script=Latin)
+
+======================================================================
+IPA vs uroman vs RAW on the SAME 44-language IPA-covered subset
+======================================================================
+
+[RAW (native scripts)]  union alphabet/IPA-inventory = 1991 symbols
+  family-NN purity   = 0.659 (tie=miss 0.659, 7 ties, chance floor 0.285, n=44)
+  alphabet-baseline family-NN = 0.477  (info-theory margin +0.182)
+  tree-vs-gold rf_triple: observed normRF=0.672, floor=0.344, null_p50=1.000, rescaled=0.500
+  tree-vs-gold GQD     = 0.306  (0 = correct/refinement; resolved_in_gold=85740)
+
+[UROMAN (Latin, vowels dropped for abjad/abugida)]  union alphabet/IPA-inventory = 26 symbols
+  family-NN purity   = 0.727 (tie=miss 0.727, 0 ties, chance floor 0.285, n=44)
+  alphabet-baseline family-NN = 0.432  (info-theory margin +0.295)
+  tree-vs-gold rf_triple: observed normRF=0.607, floor=0.344, null_p50=1.000, rescaled=0.400
+  tree-vs-gold GQD     = 0.182  (0 = correct/refinement; resolved_in_gold=85740)
+
+[IPA (epitran, vowels RESTORED)]  union alphabet/IPA-inventory = 787 symbols
+  family-NN purity   = 0.659 (tie=miss 0.659, 0 ties, chance floor 0.285, n=44)
+  alphabet-baseline family-NN = 0.614  (info-theory margin +0.045)
+  tree-vs-gold rf_triple: observed normRF=0.869, floor=0.344, null_p50=1.000, rescaled=0.800
+  tree-vs-gold GQD     = 0.447  (0 = correct/refinement; resolved_in_gold=85740)
+
+======================================================================
+CROSS-SCRIPT TEST PAIRS — trigram-JS distance (lower = closer)
+  RAW (native) -> UROMAN -> IPA
+======================================================================
+
+  -- REQUESTED --
+  Hebrew        -Arabic      : SKIP — not IPA-covered (Hebrew)
+  Telugu        -Kannada     : raw 1.000 -> uroman 0.546 -> IPA 0.969   [uroman closer]
+  Greek         -Latin       : SKIP — not IPA-covered (Greek, Latin)
+
+  -- ADDITIONAL (IPA-covered) --
+  Telugu        -Malayalam   : raw 1.000 -> uroman 0.644 -> IPA 0.973   [uroman closer]
+  Kannada       -Malayalam   : raw 1.000 -> uroman 0.630 -> IPA 0.931   [uroman closer]
+  Russian       -Polish      : raw 1.000 -> uroman 0.745 -> IPA 0.840   [uroman closer]
+  Russian       -Ukranian    : raw 0.598 -> uroman 0.544 -> IPA 0.910   [uroman closer]
+  Farsi_Persian -Arabic      : raw 0.829 -> uroman 0.738 -> IPA 0.936   [uroman closer]
+  Hindi         -Marathi     : raw 0.732 -> uroman 0.557 -> IPA 0.492   [IPA closer]
+
+saved figures/ipa_tree.png
+
+======================================================================
+SUMMARY (same IPA-covered subset)
+  family-NN purity : RAW 0.659 | uroman 0.727 | IPA 0.659 (chance 0.285)
+  rf_triple rescaled: RAW 0.500 | uroman 0.400 | IPA 0.800
+  GQD vs gold      : RAW 0.306 | uroman 0.182 | IPA 0.447
+done in 12s

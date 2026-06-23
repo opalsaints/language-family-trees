@@ -1,0 +1,19 @@
+loaded 57 langs, 2000 verses; romanizing (cached)...
+romanization ready (5s)
+
+=== RAW vs ROMANIZED ===
+  RAW        | trigram-JS: normRF 0.896, family-NN 0.667 | alphabet-baseline family-NN 0.474 | union alphabet 2638
+  ROMANIZED  | trigram-JS: normRF 0.792, family-NN 0.772 | alphabet-baseline family-NN 0.474 | union alphabet 26
+
+=== cross-script family pairs: JS distance (raw -> romanized) ===
+  Hebrew  -Arabic   : 1.000 -> 0.763
+  Hebrew  -Amharic  : 1.000 -> 0.967
+  Russian -Polish   : 1.000 -> 0.745
+  Telugu  -Kannada  : 1.000 -> 0.546
+  Greek   -Latin    : 1.000 -> 0.769
+  Russian -Bulgarian: 0.570 -> 0.544
+
+D1 verdict (romanized, common-alphabet regime): trigram-JS family-NN 0.772 vs alphabet-baseline 0.474 -> info-theory margin = +0.298
+saved figures/bible_romanized_tree.png
+saved figures/romanization_purity.png
+done in 10s

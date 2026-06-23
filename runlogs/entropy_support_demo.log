@@ -1,0 +1,122 @@
+loaded 57 languages, 2000 common verses, 13 families
+
+=== entropy-estimator simulation (uniform i.i.d., true H = log2 K) ===
+  K=64  true H = log2(K) = 6.0000 bits
+        N     plugin         MM  grassberger
+      128     5.6043     5.9130       6.0107
+     1024     5.9552     5.9995       6.0003
+    16384     5.9971     5.9999       6.0000
+  -> plug-in underestimates at small N; MM & Grassberger far closer; all converge to log2(K).
+
+=== conditional-entropy ladder F_1..F_4 (bits): plugin vs mm vs grassberger ===
+
+  [English]
+     F_N     plugin         mm  grassberger   (grass-plugin)
+    F_1      4.0532     4.0532       4.0532           0.0001
+    F_2      3.1942     3.1954       3.1956           0.0014
+    F_3      2.4428     2.4514       2.4532           0.0104
+    F_4      1.8318     1.8583       1.8668           0.0349
+
+  [German]
+     F_N     plugin         mm  grassberger   (grass-plugin)
+    F_1      4.0495     4.0496       4.0496           0.0001
+    F_2      3.1149     3.1163       3.1164           0.0016
+    F_3      2.3766     2.3855       2.3877           0.0111
+    F_4      1.8503     1.8743       1.8836           0.0333
+
+  [Finnish]
+     F_N     plugin         mm  grassberger   (grass-plugin)
+    F_1      4.0152     4.0153       4.0153           0.0001
+    F_2      3.2501     3.2511       3.2511           0.0010
+    F_3      2.5994     2.6077       2.6091           0.0097
+    F_4      1.9602     1.9896       2.0006           0.0404
+
+  [Spanish]
+     F_N     plugin         mm  grassberger   (grass-plugin)
+    F_1      4.0903     4.0904       4.0904           0.0001
+    F_2      3.1452     3.1467       3.1469           0.0016
+    F_3      2.5275     2.5370       2.5393           0.0118
+    F_4      1.9401     1.9691       1.9799           0.0398
+
+  English F_1: plugin=4.0532  mm=4.0532  grassberger=4.0532 bits (reference ~4.0)
+  English grassberger-minus-plugin gap: F_1=0.0001  F_4=0.0349 bits (gap WIDENS with n as counts get sparser)
+
+saved figures/entropy_estimators.png
+
+=== verse-block bootstrap branch support (Felsenstein; trigram-JS UPGMA) ===
+  reference tree: ((Mandarin_Chinese,Japanese),(Syriac,(Greek,((Farsi_Persian,Arabic),(Burmese,((A...
+
+  named sub-family clades (Germanic/Romance/Slavic/Indo-Aryan/Semitic/...):
+    genus           n  monophyletic?  support  members
+    Slavic          9          split      n/a  ['Bulgarian', 'Croatian', 'Czech', 'Polish', 'Russian', 'Serbian', 'Slovak', 'Slovene', '...']
+    Germanic        8        in n=27   100.0%  ['Afrikaans', 'Danish', 'Dutch', 'English', 'German', 'Icelandic', 'Norwegian', 'Swedish']
+    Romance         6         in n=7   100.0%  ['French', 'Italian', 'Latin', 'Portuguese', 'Romanian', 'Spanish']
+    Malayo-Polynesian  5         in n=9   100.0%  ['Cebuano', 'Indonesian', 'Malagasy', 'Maori', 'Tagalog']
+    Indo-Aryan      4        in n=16    73.3%  ['Farsi_Persian', 'Hindi', 'Marathi', 'Nepali']
+    Semitic         4        in n=17    76.7%  ['Amharic', 'Arabic', 'Hebrew', 'Syriac']
+    Atlantic-Congo  3         in n=4   100.0%  ['Swahili', 'Xhosa', 'Zulu']
+    Baltic          2            yes   100.0%  ['Latvian', 'Lithuanian']
+    Finno-Ugric     2        in n=16    86.7%  ['Finnish', 'Hungarian']
+    Dravidian-S     2         in n=7     0.0%  ['Kannada', 'Malayalam']
+
+  same sub-families on the HEADLINE Neighbor-Joining tree (verse-block bootstrap):
+    Slavic         n=9  split
+    Germanic       n=8  split
+    Romance        n=6  monophyletic support 100.0%
+    Malayo-Polynesian n=5  100.0% (in n=9)
+    Indo-Aryan     n=4   73.3% (in n=16)
+    Semitic        n=4   80.0% (in n=17)
+    Atlantic-Congo n=3  100.0% (in n=4)
+    Baltic         n=2  monophyletic support 100.0%
+    Finno-Ugric    n=2  split
+    Dravidian-S    n=2    0.0% (in n=10)
+
+  all clades with support >= 60% (labelled by dominant genus):
+    100.0%  (Germanic:8/27)  ['Afrikaans', 'Albanian', 'Basque', 'Croatian', 'Czech', 'Danish', 'Dutch', 'English', '...']
+    100.0%  (Germanic:7/26)  ['Afrikaans', 'Albanian', 'Basque', 'Croatian', 'Czech', 'Danish', 'Dutch', 'English', '...']
+    100.0%  (Semitic:4/21)  ['Amharic', 'Arabic', 'Bulgarian', 'Burmese', 'Farsi_Persian', 'Greek', 'Hebrew', 'Hindi', '...']
+    100.0%  (Semitic:4/20)  ['Amharic', 'Arabic', 'Bulgarian', 'Burmese', 'Farsi_Persian', 'Greek', 'Hebrew', 'Hindi', '...']
+    100.0%  (Germanic:7/17)  ['Afrikaans', 'Basque', 'Danish', 'Dutch', 'English', 'Finnish', 'French', 'German', '...']
+     76.7%  (Semitic:4/17)  ['Amharic', 'Arabic', 'Burmese', 'Farsi_Persian', 'Greek', 'Hebrew', 'Hindi', 'Japanese', '...']
+     86.7%  (Germanic:7/16)  ['Afrikaans', 'Basque', 'Danish', 'Dutch', 'English', 'Finnish', 'French', 'German', '...']
+     73.3%  (Indo-Aryan:4/16)  ['Arabic', 'Burmese', 'Farsi_Persian', 'Greek', 'Hebrew', 'Hindi', 'Japanese', 'Kannada', '...']
+    100.0%  (Germanic:7/15)  ['Afrikaans', 'Basque', 'Danish', 'Dutch', 'English', 'Finnish', 'French', 'German', '...']
+    100.0%  (Germanic:7/14)  ['Afrikaans', 'Basque', 'Danish', 'Dutch', 'English', 'French', 'German', 'Italian', '...']
+    100.0%  (Slavic:6/9)  ['Albanian', 'Croatian', 'Czech', 'Latvian', 'Lithuanian', 'Polish', 'Serbian', 'Slovak', '...']
+    100.0%  (Malayo-Polynesian:5/9)  ['Cebuano', 'Indonesian', 'Malagasy', 'Maori', 'Shona', 'Swahili', 'Tagalog', 'Xhosa', '...']
+    100.0%  (Slavic:6/8)  ['Croatian', 'Czech', 'Latvian', 'Lithuanian', 'Polish', 'Serbian', 'Slovak', 'Slovene']
+    100.0%  (Germanic:7/7)  ['Afrikaans', 'Danish', 'Dutch', 'English', 'German', 'Norwegian', 'Swedish']
+    100.0%  (Romance:6/7)  ['Basque', 'French', 'Italian', 'Latin', 'Portuguese', 'Romanian', 'Spanish']
+    100.0%  (Malayo-Polynesian:3/7)  ['Cebuano', 'Indonesian', 'Shona', 'Swahili', 'Tagalog', 'Xhosa', 'Zulu']
+    100.0%  (Germanic:6/6)  ['Afrikaans', 'Danish', 'Dutch', 'German', 'Norwegian', 'Swedish']
+     80.0%  (Romance:5/6)  ['Basque', 'French', 'Italian', 'Latin', 'Portuguese', 'Spanish']
+    100.0%  (Slavic:6/6)  ['Croatian', 'Czech', 'Polish', 'Serbian', 'Slovak', 'Slovene']
+    100.0%  (Slavic:5/5)  ['Croatian', 'Czech', 'Serbian', 'Slovak', 'Slovene']
+    100.0%  (Romance:5/5)  ['French', 'Italian', 'Latin', 'Portuguese', 'Spanish']
+    100.0%  (Atlantic-Congo:3/4)  ['Shona', 'Swahili', 'Xhosa', 'Zulu']
+    100.0%  (Germanic:3/3)  ['Afrikaans', 'Dutch', 'German']
+    100.0%  (Slavic:3/3)  ['Bulgarian', 'Russian', 'Ukranian']
+    100.0%  (Malayo-Polynesian:3/3)  ['Cebuano', 'Indonesian', 'Tagalog']
+    100.0%  (Slavic:3/3)  ['Croatian', 'Serbian', 'Slovene']
+    100.0%  (Germanic:3/3)  ['Danish', 'Norwegian', 'Swedish']
+    100.0%  (Indo-Aryan:3/3)  ['Hindi', 'Marathi', 'Nepali']
+    100.0%  (Romance:3/3)  ['Italian', 'Portuguese', 'Spanish']
+    100.0%  (Germanic:2/2)  ['Afrikaans', 'Dutch']
+    100.0%  (Semitic:1/2)  ['Arabic', 'Farsi_Persian']
+    100.0%  (Slavic:2/2)  ['Bulgarian', 'Russian']
+    100.0%  (Malayo-Polynesian:2/2)  ['Cebuano', 'Tagalog']
+    100.0%  (Slavic:2/2)  ['Croatian', 'Serbian']
+    100.0%  (Slavic:2/2)  ['Czech', 'Slovak']
+    100.0%  (Germanic:2/2)  ['Danish', 'Norwegian']
+    100.0%  (Romance:2/2)  ['French', 'Latin']
+    100.0%  (Indo-Aryan:2/2)  ['Hindi', 'Nepali']
+    100.0%  (Japonic:1/2)  ['Japanese', 'Mandarin_Chinese']
+    100.0%  (Baltic:2/2)  ['Latvian', 'Lithuanian']
+    100.0%  (Malayo-Polynesian:2/2)  ['Malagasy', 'Maori']
+    100.0%  (Romance:2/2)  ['Portuguese', 'Spanish']
+    100.0%  (Bantu:1/2)  ['Shona', 'Swahili']
+    100.0%  (Atlantic-Congo:2/2)  ['Xhosa', 'Zulu']
+
+saved figures/bootstrap_support_tree.png
+
+done.
