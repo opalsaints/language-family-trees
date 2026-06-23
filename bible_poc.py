@@ -22,6 +22,7 @@ from collections import defaultdict
 import numpy as np
 
 import langtree as lt
+import biblecorpus as bc
 
 BASE = os.path.join(os.path.dirname(__file__), "corpus", "bible-corpus")
 BIBLES = os.path.join(BASE, "bibles")
@@ -120,13 +121,15 @@ def main():
         txt = lt.clean(" ".join(verses[fn][v] for v in common))
         names.append(label)
         texts.append(txt)
-        rows.append((label, m["Family"], m["Genus"], m["Subgenus"]))
+        rows.append((label, bc.fix_family(m["Family"]), m["Genus"], m["Subgenus"]))
 
     print("chars/lang: min=%d max=%d" % (min(len(t) for t in texts),
                                          max(len(t) for t in texts)))
 
-    # gold tree from taxonomy
+    # gold tree from taxonomy (family labels normalised via bc.fix_family above)
     gold = lt.gold_newick_from_rows(rows)
+    fam_of = {label: fam for label, fam, _, _ in rows}
+    gen_of = {label: (gen or fam) for label, fam, gen, _ in rows}
 
     # four methods
     methods = {
@@ -136,32 +139,61 @@ def main():
         "shuffle trigram-JS (CONTROL)": lt.js_matrix([lt.shuffle_chars(t, 0) for t in texts], n=3),
     }
 
-    print(f"\n{'method':32s}  {'RF/denom':>12s}  {'normRF':>7s}  {'NN-family-purity':>16s}")
-    print("-" * 76)
-    fam_of = {label: fam for label, fam, _, _ in rows}
+    # honest baselines for the scores
+    fam_chance = lt.purity_chance_floor(fam_of, names)
+    gen_chance = lt.purity_chance_floor(gen_of, names)
+    print(f"\nHONEST BASELINES: family-NN chance floor = {fam_chance:.3f} (NOT 0; "
+          f"largest family = {max(np.unique([f for f in fam_of.values()], return_counts=True)[1])}/{len(names)}); "
+          f"genus-NN chance floor = {gen_chance:.3f}")
+    print(f"{'method':30s}{'normRF':>8s}{'(floor':>7s}{'null)':>6s}{'rescaled':>9s}{'GQD':>7s}{'fam-NN':>8s}{'ties':>6s}")
+    print("-" * 82)
     results = {}
     for name, D in methods.items():
         nwk = lt.linkage_to_newick(lt.upgma(D, names), names)
-        rf, denom, norm = lt.rf_corrected(nwk, gold)
-        # nearest-neighbour family purity
-        hits = 0
-        for i, lab in enumerate(names):
-            order = np.argsort([D[i, j] if j != i else np.inf for j in range(len(names))])
-            nn = names[order[0]]
-            if fam_of[nn] == fam_of[lab]:
-                hits += 1
-        purity = hits / len(names)
-        results[name] = (rf, denom, norm, purity)
-        print(f"{name:32s}  {rf:5d}/{denom:<6d}  {norm:7.3f}  {purity:16.3f}")
+        tri3 = lt.rf_triple(nwk, gold, names, n_null=200)
+        g = lt.gqd(nwk, gold, names)["gqd"]
+        diag = lt.nn_diagnostics(D, names, fam_of)
+        results[name] = dict(rf=tri3, gqd=g, diag=diag)
+        print(f"{name:30s}{tri3['observed']:8.3f}{tri3['floor']:7.3f}{tri3['null_p50']:6.3f}"
+              f"{tri3['rescaled']:9.3f}{g:7.3f}{diag['purity']:8.3f}{diag['n_ties']:6d}")
+    print("-" * 82)
 
-    print("-" * 76)
-    tri = results["trigram-JS (n=3)"][2]
-    alpha = results["alphabet-Jaccard (BASELINE)"][2]
-    verdict = ("TRIGRAMS BEAT the alphabet baseline" if tri < alpha - 1e-9
-               else "TRIGRAMS TIE/LOSE to the alphabet baseline" if tri <= alpha + 1e-9
-               else "alphabet baseline beats trigrams")
-    print(f"HEADLINE: trigram-JS normRF={tri:.3f} vs alphabet normRF={alpha:.3f} -> {verdict}")
-    print(f"(lower normRF = closer to the true family tree; {len(names)} languages)")
+    tri = results["trigram-JS (n=3)"]
+    alpha = results["alphabet-Jaccard (BASELINE)"]
+    uni = results["unigram-JS (n=1)"]
+    better = tri["rf"]["observed"] < alpha["rf"]["observed"] - 1e-9
+    print(f"HEADLINE (vs the DUMB baseline, on the true scale): trigram-JS rescaledRF "
+          f"{tri['rf']['rescaled']:.3f} / GQD {tri['gqd']:.3f} / fam-NN {tri['diag']['purity']:.3f}  vs  "
+          f"alphabet rescaledRF {alpha['rf']['rescaled']:.3f} / GQD {alpha['gqd']:.3f} / fam-NN {alpha['diag']['purity']:.3f}"
+          f"  -> {'trigram-JS WINS' if better else 'NOT better'}")
+    print(f"  honest margins: fam-NN +{tri['diag']['purity']-alpha['diag']['purity']:.3f} over baseline, "
+          f"+{tri['diag']['purity']-fam_chance:.3f} over CHANCE ({fam_chance:.3f}).")
+    print(f"  unigram-JS fam-NN {uni['diag']['purity']:.3f} vs trigram {tri['diag']['purity']:.3f} "
+          f"-> order adds {tri['diag']['purity']-uni['diag']['purity']:+.3f} (most signal is in the frequencies).")
+    print(f"  tie-robust fam-NN (JS=1.0 ties counted as misses): trigram {tri['diag']['purity_tiemiss']:.3f} "
+          f"({tri['diag']['n_ties']} undefined NN on raw cross-script).")
+
+    # genus-level + IE-split purity (the honest 'does it recover families' test)
+    Dtri = methods["trigram-JS (n=3)"]
+    gen_pur = lt.nn_purity(Dtri, names, gen_of)
+    ie = [n for n in names if fam_of[n] == "Indo-European"]
+    nonie = [n for n in names if fam_of[n] != "Indo-European"]
+    def subset_purity(sub):
+        if len(sub) < 2:
+            return float("nan")
+        idx = [names.index(s) for s in sub]
+        Dsub = Dtri[np.ix_(idx, idx)]
+        return lt.nn_purity(Dsub, sub, fam_of)
+    print(f"  genus-level fam... genus-NN purity {gen_pur:.3f} (genus chance {gen_chance:.3f}); "
+          f"IE-only fam-NN {subset_purity(ie):.3f} (n={len(ie)}) vs non-IE-only {subset_purity(nonie):.3f} "
+          f"(n={len(nonie)}) -> the panel is IE-dominated; non-IE recovery is the harder, honest test.")
+
+    # vocabulary-size bias diagnostic
+    Ks = np.array([len(lt.ngram_counter(t, 3)) for t in texts])
+    iu = np.triu_indices(len(names), 1)
+    maxK = np.array([[max(Ks[i], Ks[j]) for j in range(len(names))] for i in range(len(names))])[iu]
+    print(f"  bias check: corr(trigram-JS distance, max #trigrams K) = "
+          f"{np.corrcoef(Dtri[iu], maxK)[0,1]:.3f} (plug-in JS partly tracks vocabulary size).")
 
     # ---- dendrogram of the trigram-JS tree, coloured by family ----
     import matplotlib

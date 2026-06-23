@@ -37,12 +37,25 @@ raw = [lt.clean(d["rawtext"][n]) for n in names]
 print("romanizing (cached)...")
 rom = [lt.clean(t) for t in bc.romanize_cached(names, d["rawtext"], iso, tag="scaleup2_c30000").values()]
 
+fam_chance = lt.purity_chance_floor(fam_of, names)
+print(f"family-NN chance floor at this breadth: {fam_chance:.3f}")
+print("CAVEAT: this arm uses align=False (each language's own first verses, NOT the identical verses), so")
+print("full-Bible (OT+NT) vs NT-only languages differ in CONTENT; that content axis partly correlates with")
+print("family -> read these as a breadth sanity-check, not a clean content-controlled result like the 57-set.")
+
+
 def report(texts, tag):
     Djs = lt.js_matrix(texts, 3)
     Dal = lt.alphabet_jaccard_matrix(texts)
-    rf = lt.rf_corrected(lt.linkage_to_newick(lt.upgma(Djs, names), names), gold)[2]
-    print(f"  {tag:10s} trigram-JS: normRF {rf:.3f}, family-NN {lt.nn_purity(Djs,names,fam_of):.3f} "
-          f"| alphabet-baseline family-NN {lt.nn_purity(Dal,names,fam_of):.3f}")
+    nwk = lt.linkage_to_newick(lt.upgma(Djs, names), names)
+    tri = lt.rf_triple(nwk, gold, names, n_null=150)
+    g = lt.gqd(nwk, gold, names)
+    diag = lt.nn_diagnostics(Djs, names, fam_of)
+    dal = lt.nn_diagnostics(Dal, names, fam_of)
+    print(f"  {tag:10s} trigram-JS: normRF {tri['observed']:.3f} (floor {tri['floor']:.3f}, "
+          f"rescaled {tri['rescaled']:.3f}), GQD {g['gqd']:.3f}{'~' if g['approx'] else ''}, "
+          f"family-NN {diag['purity']:.3f} (chance {diag['chance']:.3f}, {diag['n_ties']} ties) "
+          f"| alphabet-baseline family-NN {dal['purity']:.3f}")
     return Djs
 
 print("\n=== results at scale ===")

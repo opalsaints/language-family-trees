@@ -12,6 +12,21 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BASE = os.path.join(HERE, "corpus", "bible-corpus")
 BIBLES = os.path.join(BASE, "bibles")
 
+# --- Glottolog-consistent corrections to the christos-c metadata.csv ---------
+# (per CRITICAL_REVIEW_23jun): the macro-family 'Altaic' is rejected by modern
+# consensus, and a literal 'Altaic' vs 'Altaic(?)' typo split Turkish from Korean.
+# Fix to current top-level families (Turkic / Koreanic / Japonic as separate
+# isol./families — NOT force-merged) and strip '(?)' uncertainty markers so the
+# gold tree is reproducible and defensible. These leave 3 singletons in the 57-set,
+# so report the resulting purity ceiling (~0.895). Applied in load().
+FAMILY_FIXES = {"Altaic": "Turkic", "Altaic(?)": "Koreanic"}
+SCRIPT_FIXES = {"Icelandic": "Latin"}   # metadata 'Ethiopic' is a data error (Latin)
+
+
+def fix_family(fam):
+    f = FAMILY_FIXES.get((fam or "").strip(), (fam or "").strip())
+    return f.replace("(?)", "").strip() or "NA"
+
 # Diverse multi-family / multi-script subset (excludes PART/partial bibles so the
 # common-verse backbone stays large).
 SELECTION = [
@@ -54,7 +69,8 @@ def safe(label):
     return re.sub(r"[^0-9A-Za-z]+", "_", label).strip("_") or "X"
 
 
-def load(selection=SELECTION, verse_cap=4000, char_cap=None, align=True):
+def load(selection=SELECTION, verse_cap=4000, char_cap=None, align=True,
+         return_units=False):
     """Return dict with per-language data.
 
     align=True (default): strictly PARALLEL — the same `verse_cap` verses common
@@ -63,8 +79,15 @@ def load(selection=SELECTION, verse_cap=4000, char_cap=None, align=True):
     the identical verses); needed at large breadth where no verse is shared by
     all (e.g. indigenous NT translations with different versification).
 
+    return_units=True (requires align=True): also return units{label->[verse str]},
+    the per-language ALIGNED verse list (same order/length across languages), for the
+    Felsenstein site/block bootstrap (langtree.branch_support_block / bootstrap_ci_block).
+
+    Family labels are normalised via FAMILY_FIXES / fix_family (Altaic typo + '(?)'
+    stripped) and Script via SCRIPT_FIXES, so the gold tree is reproducible/defensible.
+
     Keys: names, rawtext{label->pre-clean str}, rows[(label,fam,gen,sub)],
-    iso{label->ISO639-3}, script{label->script}, common[verse ids]."""
+    iso{label->ISO639-3}, script{label->script}, common[verse ids], [units]."""
     meta = load_meta()
     present = [fn for fn in selection if os.path.exists(os.path.join(BIBLES, fn))]
     verses = {fn: parse_verses(os.path.join(BIBLES, fn)) for fn in present}
@@ -76,6 +99,7 @@ def load(selection=SELECTION, verse_cap=4000, char_cap=None, align=True):
         common = sorted(common)[:verse_cap]
 
     names, rawtext, rows, iso, script, used = [], {}, [], {}, {}, set()
+    units = {}
     for fn in present:
         m = meta[fn]
         lab = safe(m["Language"])
@@ -83,21 +107,27 @@ def load(selection=SELECTION, verse_cap=4000, char_cap=None, align=True):
             lab += "_"
         used.add(lab)
         if align:
-            txt = " ".join(verses[fn][v] for v in common)
+            unit_list = [verses[fn][v] for v in common]
         else:
             vids = sorted(verses[fn])
             if verse_cap:
                 vids = vids[:verse_cap]
-            txt = " ".join(verses[fn][v] for v in vids)
+            unit_list = [verses[fn][v] for v in vids]
+        txt = " ".join(unit_list)
         if char_cap:
             txt = txt[:char_cap]
         names.append(lab)
         rawtext[lab] = txt
-        rows.append((lab, m["Family"], m["Genus"], m["Subgenus"]))
+        if return_units:
+            units[lab] = unit_list
+        rows.append((lab, fix_family(m["Family"]), m["Genus"], m["Subgenus"]))
         iso[lab] = m["ISO_639-3"]
-        script[lab] = m["Script"]
-    return dict(names=names, rawtext=rawtext, rows=rows, iso=iso,
-                script=script, common=common)
+        script[lab] = SCRIPT_FIXES.get(lab, m["Script"])
+    out = dict(names=names, rawtext=rawtext, rows=rows, iso=iso,
+               script=script, common=common)
+    if return_units:
+        out["units"] = units
+    return out
 
 
 def romanize_cached(names, rawtext, iso, tag="default"):
